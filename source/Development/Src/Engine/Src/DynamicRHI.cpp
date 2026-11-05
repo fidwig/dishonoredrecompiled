@@ -10,8 +10,8 @@
 // External dynamic RHI factory functions.
 extern FDynamicRHI* NullCreateRHI();
 #if PLATFORM_DESKTOP && !USE_NULL_RHI
+	extern FDynamicRHI* D3D9CreateRHI();
 	#if _WINDOWS
-		extern FDynamicRHI* D3D9CreateRHI();
 		extern FDynamicRHI* D3D11CreateRHI();
 		extern UBOOL IsDirect3D11Supported(UBOOL& OutSupportsD3D11Features);
 		#if USE_DYNAMIC_ES2_RHI
@@ -56,9 +56,9 @@ void RHIInit( UBOOL bIsEditor )
 			GDynamicRHI = NullCreateRHI();
 			GUsingNullRHI = TRUE;
 		}
-#if _WINDOWS
 		else
 		{
+#if _WINDOWS
 #if USE_DYNAMIC_ES2_RHI
 			UBOOL bWantsES2 = FALSE;
 
@@ -91,10 +91,11 @@ void RHIInit( UBOOL bIsEditor )
 				GForcedRenderMode = RENDER_MODE_DX9;
 				GDynamicRHI = D3D9CreateRHI();
 			}
-		}
 #elif PLATFORM_MACOSX
-		GDynamicRHI = OpenGLCreateRHI();
+			GForcedRenderMode = RENDER_MODE_DX9;
+			GDynamicRHI = D3D9CreateRHI();
 #endif // _WINDOWS
+		}
 #endif // USE_NULL_RHI
 		check(GDynamicRHI);
 	}

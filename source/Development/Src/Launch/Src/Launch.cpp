@@ -584,6 +584,29 @@ INT WINAPI WinMain( HINSTANCE hInInstance, HINSTANCE hPrevInstance, char*, INT n
 	GIsStarted = 0;
 	return ErrorLevel;
 }
+#elif PLATFORM_MACOSX || PLATFORM_UNIX
+int main( int argc, char* argv[] )
+{
+	appStrcpy(GGameName, TEXT("None"));
+	GIsStarted = 1;
+
+	FString CommandLine;
+	for (int i = 1; i < argc; ++i)
+	{
+		if (i > 1)
+		{
+			CommandLine += TEXT(" ");
+		}
+		CommandLine += ANSI_TO_TCHAR(argv[i]);
+	}
+
+	INT ErrorLevel = GuardedMain(*CommandLine, NULL, NULL, 0);
+
+	appExit();
+	GIsStarted = 0;
+	return ErrorLevel;
+}
+#endif
 
 #ifdef _WINDLL
 
@@ -664,5 +687,4 @@ void PIBShutdown( void )
 
 #endif // _WINDLL
 
-#endif
 #endif

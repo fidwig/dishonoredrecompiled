@@ -658,10 +658,7 @@ void LoadAnIniFile( const TCHAR* FilenameToLoad, FConfigFile& ConfigFile, UBOOL 
 #elif DEDICATED_SERVER
 	#define DEFAULT_INI_PREFIX PCSERVER_DEFAULT_INI_PREFIX
 	#define INI_PREFIX PCSERVER_INI_PREFIX
-#elif PLATFORM_MACOSX
-	#define DEFAULT_INI_PREFIX MACOSX_DEFAULT_INI_PREFIX
-	#define INI_PREFIX MACOSX_INI_PREFIX
-#elif defined (_WINDOWS) || PLATFORM_UNIX
+#elif PLATFORM_MACOSX || defined (_WINDOWS) || PLATFORM_UNIX
     #define DEFAULT_INI_PREFIX PC_DEFAULT_INI_PREFIX
     #define INI_PREFIX PC_INI_PREFIX
 #elif NGP
@@ -2145,7 +2142,7 @@ UBOOL appWriteStringToFileInternal (const FString& String, const TCHAR* Filename
 // C++ style memory allocation.
 //
 OPERATOR_NEW_INLINE void* operator new( size_t Size )
-#if __GNUC__ && !PS3 && !IPHONE && !ANDROID && !FLASH
+#if __GNUC__ && !PS3 && !IPHONE && !ANDROID && !FLASH && (__cplusplus < 201703L)
 throw (std::bad_alloc)
 #endif
 {

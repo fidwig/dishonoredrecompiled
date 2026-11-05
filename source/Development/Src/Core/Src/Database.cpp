@@ -6,9 +6,9 @@
 // Precompiled header include. Can't add anything above this line.
 #include "CorePrivate.h"
 #include "Database.h"
-#include "../../IpDrv/Inc/UnIpDrv.h"
 
 #if USE_REMOTE_INTEGRATION
+#include "../../IpDrv/Inc/UnIpDrv.h"
 
 /**
  * Sends a command to the database proxy.

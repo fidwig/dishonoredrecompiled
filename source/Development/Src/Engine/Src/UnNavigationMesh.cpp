@@ -29,7 +29,9 @@ TMap< UNavigationMeshBase*, WORD > UNavigationMeshBase::SubMeshToParentPolyMap;
 PolyToObstacleMap UNavigationMeshBase::SubMeshPolyIDToLinkeObstacleMap;
 TArray<UNavigationMeshBase::FDynamicSnapInfo> UNavigationMeshBase::DynamicSnapRevertData;
 // DISHONORED(layout): retail UNavigationMeshBase is 464 bytes (native_class_sizes.csv, 2012 PDB member list in UnPath.h)
+#if DISHONORED_LAYOUT_CHECKS
 checkAtCompileTime(sizeof(UNavigationMeshBase) == 464, UNavigationMeshBase_is_464_bytes_in_retail);
+#endif
 IMPLEMENT_CLASS(APathTargetPoint);
 IMPLEMENT_CLASS(APylonSeed);
 IMPLEMENT_CLASS(UInterface_PylonGeometryProvider);

@@ -3969,3 +3969,27 @@ struct FScopedObjectFlagMarker
 
 #endif	// ENABLE_DECLARECLASS_MACRO
 
+#ifndef SCRIPT_INTERFACE_SAVE_LOAD_DEFINED
+#define SCRIPT_INTERFACE_SAVE_LOAD_DEFINED 1
+template<class InterfaceType>
+inline void TScriptInterface<InterfaceType>::SerializeForSaveLoad( FArchive& Ar, UClass* InterfaceClass )
+{
+	UObject* ObjectValue = this->GetObject();
+	Ar << ObjectValue;
+	if( Ar.IsLoading() )
+	{
+		if( ObjectValue != NULL )
+		{
+			this->SetObject( ObjectValue );
+			this->SetInterface( ObjectValue->GetInterfaceAddress( InterfaceClass ) );
+		}
+		else
+		{
+			this->SetObject( NULL );
+			this->SetInterface( NULL );
+		}
+	}
+}
+#endif
+
+

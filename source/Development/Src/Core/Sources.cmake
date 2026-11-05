@@ -4,6 +4,15 @@
 set(Core_EXCLUDE
   Src/UnitTest.cpp
 )
+if(APPLE)
+  list(APPEND Core_EXCLUDE
+    Src/FFileManagerWindows.cpp
+    Src/UnAsyncLoadingWindows.cpp
+    Src/StackWalkingWindows.cpp
+    Src/UnThreadingWindows.cpp
+    Src/UnVcWin32.cpp
+  )
+endif()
 set(Core_NOT_IN_PDB
   Src/AES.cpp
   Src/BestFitAllocator.cpp

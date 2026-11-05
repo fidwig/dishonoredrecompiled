@@ -116,7 +116,7 @@ public:
 #if _MSC_VER
 		MultiByteToWideChar(CP_ACP,0,Source,Length,Dest,Length);
 #elif PLATFORM_MACOSX
-		appMacMultiByteToWideChar(CP_ACP,Source,Dest,Length-1);
+		appMacMultiByteToWideChar(CP_ACP,Source,Dest,Length);
 #else
 		for (INT C = 0; C < Length; C++)
 		{

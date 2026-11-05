@@ -28,6 +28,7 @@ void AutoGenerateNamesAkAudio() {}
 // LaunchEngineLoop.cpp calls the GFxUI registrants unconditionally (not under WITH_GFx).
 #if !DISHONORED_HAVE_GFXUI
 void AutoInitializeRegistrantsGFxUI( INT& Lookup ) {}
+void AutoGenerateNamesGFxUI() {}
 #endif
 
 // ---- OnlineSubsystemSteamworks (WITH_STEAMWORKS=0 until Phase 4) ----------------------------
@@ -100,7 +101,7 @@ UBOOL D3D11FinishCompilingShaderThroughWorker(FShaderTarget Target, INT& Current
 // DynamicRHI.cpp RHIInit (-opengl / bAllowOpenGL), ShaderCompiler.cpp and Material.cpp reference them.
 FDynamicRHI* OpenGLCreateRHI()
 {
-	return NULL;
+	return NullCreateRHI();
 }
 UBOOL OpenGLBeginCompileShader(INT JobId, UINT ThreadId, const TCHAR* SourceFilename, const TCHAR* FunctionName, FShaderTarget Target, const FShaderCompilerEnvironment& Environment, FShaderCompilerOutput& Output, UBOOL bDebugDump, const TCHAR* ShaderSubDir)
 {
@@ -143,6 +144,17 @@ UBOOL FUnitTestFramework::RunTestByName(const FString& InTestName, FUnitTestExec
 	return FALSE;
 }
 
+#if PLATFORM_MACOSX
+void AutoInitializeRegistrantsCoreAudio( INT& Lookup ) {}
+void AutoInitializeRegistrantsMacDrv( INT& Lookup ) {}
+#endif
+
+// ---- Dishonored input hooks -----------------------------------------------------------------
+UBOOL DishonoredInputGrabDisabled()
+{
+	return FALSE;
+}
+
 // ---- Link anchors for static-library objects nothing references -----------------------------
 // UBT links the modules as static libraries too, but every stat group / registrant global lives in
 // an object that also exports something referenced, except this one: Core/Src/BestFitAllocator.cpp
@@ -152,5 +164,10 @@ UBOOL FUnitTestFramework::RunTestByName(const FString& InTestName, FUnitTestExec
 // DISHONORED(bringup): only meaningful while STATS is compiled in. Shipping compiles the stat system
 // out entirely, so the symbol this names does not exist and there is no FStatManager::Init to assert.
 #if STATS
+#if _MSC_VER
 #pragma comment(linker, "/include:?GroupFactory_STATGROUP_TexturePool@@3UFStatGroupFactory@@A")
+#else
+extern FStatGroupFactory GroupFactory_STATGROUP_TexturePool;
+const void* GForceTexturePoolAnchor = (const void*)&GroupFactory_STATGROUP_TexturePool;
+#endif
 #endif

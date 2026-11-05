@@ -253,7 +253,7 @@ public:
 
 
 // Check support for variadic macros:
-#if (GCC_VERSION > 030401) || (_MSC_VER >= 1400) || NGP || WIIU
+#if (GCC_VERSION > 030401) || (_MSC_VER >= 1400) || NGP || WIIU || defined(__clang__)
 	#define SUPPORTS_VARIADIC_MACROS	1
 #elif _MSC_VER >= 1300
 	//Visual Studio C++ 2003 doesn't support it, but there is a workaround:

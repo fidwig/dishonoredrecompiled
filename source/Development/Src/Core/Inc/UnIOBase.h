@@ -729,6 +729,19 @@ struct FAsyncIOSystemWindows : public FAsyncIOSystemBase
 };
 #endif	
 
+#if PLATFORM_MACOSX
+/**
+ * Mac specific implementation of async IO system.
+ */
+struct FAsyncIOSystemMac : public FAsyncIOSystemBase
+{
+	virtual UBOOL PlatformReadDoNotCallDirectly( FAsyncIOHandle FileHandle, INT Offset, INT Size, void* Dest );
+	virtual FAsyncIOHandle PlatformCreateHandle( const TCHAR* FileName );
+	virtual void PlatformDestroyHandle( FAsyncIOHandle FileHandle );
+	virtual UBOOL PlatformIsHandleValid( FAsyncIOHandle FileHandle );
+};
+#endif	
+
 /*-----------------------------------------------------------------------------
 	FAsyncIOSystemXenon
 -----------------------------------------------------------------------------*/

@@ -1,7 +1,9 @@
 // CoreSmoke: links Core.lib and checks the basic contracts (P2.12). Exit code = number of failures.
 #include "Core.h"
 
+#if _MSC_VER
 #include <dbghelp.h>
+#endif
 
 #include <cstdio>
 #include <cstring>
@@ -74,11 +76,19 @@ bool ReadHardcodedNameIndex(const char* Wanted, int& OutIndex)
 void TestSizes()
 {
 	CHECK_EQ("sizeof(FName) == 8 (sizes.csv)", sizeof(FName), 8);
+#if PLATFORM_64BITS
+	CHECK_EQ("sizeof(FString) == 16 (64-bit)", sizeof(FString), 16);
+	CHECK_EQ("sizeof(UObject) == 96 (64-bit)", sizeof(UObject), 96);
+	CHECK_EQ("sizeof(FPackageFileSummary) == 192 (64-bit)", sizeof(FPackageFileSummary), 192);
+	CHECK_EQ("sizeof(FArchive) == 144 (64-bit)", sizeof(FArchive), 144);
+	CHECK_EQ("sizeof(FMemoryReader) == 152 (64-bit)", sizeof(FMemoryReader), 152);
+#else
 	CHECK_EQ("sizeof(FString) == 12 (sizes.csv)", sizeof(FString), 12);
 	CHECK_EQ("sizeof(UObject) == 56 (sizes.csv)", sizeof(UObject), 56);
 	CHECK_EQ("sizeof(FPackageFileSummary) == 164 (sizes.csv)", sizeof(FPackageFileSummary), 164);
 	CHECK_EQ("sizeof(FArchive) == 136 (sizes.csv)", sizeof(FArchive), 136);
 	CHECK_EQ("sizeof(FMemoryReader) == 144 (sizes.csv)", sizeof(FMemoryReader), 144);
+#endif
 }
 
 void TestAppHelpers()
@@ -183,9 +193,30 @@ void TestNames()
 	Report(FName(NAME_Engine).ToString() == TEXT("Engine") && FName(NAME_Core).ToString() == TEXT("Core"), "NAME_Engine/NAME_Core ToString");
 }
 
+static const char* FindCoreUpkPath()
+{
+	static const char* Candidates[] = {
+		"DishonoredGame/CookedPCConsole/Core.upk",
+		"../../DishonoredGame/CookedPCConsole/Core.upk",
+		"../DishonoredGame/CookedPCConsole/Core.upk",
+		"/Users/jsph/Library/Application Support/Steam/steamapps/common/Dishonored/DishonoredGame/CookedPCConsole/Core.upk",
+		"D:/RecompileDishonored/Dishonored_Latest2026/DishonoredGame/CookedPCConsole/Core.upk"
+	};
+	for (const char* Candidate : Candidates)
+	{
+		FILE* F = fopen(Candidate, "rb");
+		if (F)
+		{
+			fclose(F);
+			return Candidate;
+		}
+	}
+	return Candidates[0];
+}
+
 void TestPackageSummary()
 {
-	const char* Path = "D:/RecompileDishonored/Dishonored_Latest2026/DishonoredGame/CookedPCConsole/Core.upk";
+	const char* Path = FindCoreUpkPath();
 	FILE* File = fopen(Path, "rb");
 	if (!File)
 	{
@@ -232,7 +263,7 @@ void TestPackageSummary()
 // FArchive::SerializeCompressed (the ULinkerLoad path) and walks the name table that starts the chunk.
 void TestCompressedChunk()
 {
-	const char* Path = "D:/RecompileDishonored/Dishonored_Latest2026/DishonoredGame/CookedPCConsole/Core.upk";
+	const char* Path = FindCoreUpkPath();
 	FILE* File = fopen(Path, "rb");
 	if (!File)
 	{
@@ -293,7 +324,11 @@ void TestCompressedChunk()
 	// which needs the synchronize factory Launch installs (LaunchEngineLoop.cpp: GSynchronizeFactory)
 	// and a config cache (appInit: GConfig = ConfigFactory(); an empty one with file operations disabled
 	// answers every query with FALSE without touching GFileManager, which the harness does not install).
+#if _MSC_VER
 	static FSynchronizeFactoryWin SynchronizeFactory;
+#else
+	static FSynchronizeFactoryMac SynchronizeFactory;
+#endif
 	if (!GSynchronizeFactory)
 	{
 		GSynchronizeFactory = &SynchronizeFactory;
@@ -379,6 +414,7 @@ void TestCompressedChunk()
 }
 }
 
+#if _MSC_VER
 LONG WINAPI CrashFilter(EXCEPTION_POINTERS* Info)
 {
 	const EXCEPTION_RECORD* Record = Info->ExceptionRecord;
@@ -424,13 +460,16 @@ LONG WINAPI CrashFilter(EXCEPTION_POINTERS* Info)
 	printf("%d passed, %d failed, %d skipped before the crash\n", NumPassed, NumFailures, NumSkipped);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
+#endif
 
 void InstallSmokeOutputDevices();
 
 int main(int, char**)
 {
 	setvbuf(stdout, NULL, _IONBF, 0);
+#if _MSC_VER
 	SetUnhandledExceptionFilter(CrashFilter);
+#endif
 	InstallSmokeOutputDevices();
 	printf("CoreSmoke: Core.lib smoke test\n");
 	TestSizes();

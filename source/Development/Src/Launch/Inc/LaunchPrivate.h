@@ -50,7 +50,6 @@
 #elif PLATFORM_MACOSX
 #include "FFileManagerMac.h"
 #include "MacThreading.h"
-#include "AsyncLoadingMac.h"
 #else
 #error Please define your platform.
 #endif

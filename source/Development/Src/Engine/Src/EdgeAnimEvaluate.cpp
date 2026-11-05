@@ -9,7 +9,11 @@
 #include "Core.h"
 #include "EdgeAnim.h"
 
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
 #include <xmmintrin.h>
+#else
+#include <cmath>
+#endif
 
 namespace
 {
@@ -59,6 +63,7 @@ DWORD ShiftRight(DWORD Value, DWORD Count)
 	return Count >= 32 ? 0 : Value >> Count;
 }
 
+#if defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64)
 FLOAT SseSqrt(FLOAT Value)
 {
 	return _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(Value)));
@@ -85,6 +90,32 @@ FLOAT SseMax(FLOAT A, FLOAT B)
 {
 	return _mm_cvtss_f32(_mm_max_ss(_mm_set_ss(A), _mm_set_ss(B)));
 }
+#else
+FLOAT SseSqrt(FLOAT Value)
+{
+	return std::sqrt(Value);
+}
+
+FLOAT SseRsqrt(FLOAT Value)
+{
+	return 1.0f / std::sqrt(Value);
+}
+
+FLOAT SseReciprocal(FLOAT Value)
+{
+	return 1.0f / Value;
+}
+
+FLOAT SseMin(FLOAT A, FLOAT B)
+{
+	return (A < B) ? A : B;
+}
+
+FLOAT SseMax(FLOAT A, FLOAT B)
+{
+	return (A > B) ? A : B;
+}
+#endif
 
 /** Big-endian bit stream, most significant bit first (the SPU data order the x86 build byte swaps on load). */
 struct FEdgeBitReader

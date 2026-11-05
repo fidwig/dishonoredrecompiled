@@ -447,8 +447,10 @@ FShaderCompilingThreadManager::FShaderCompilingThreadManager() :
 	CurrentMaterialName(NULL)
 {
 	// Read values from the engine ini
-	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowMultiThreadedShaderCompile"), bAllowMultiThreadedShaderCompile, GEngineIni ));
-	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowDistributedShaderCompile"), bAllowDistributedShaderCompile, GEngineIni ));
+	bAllowMultiThreadedShaderCompile = FALSE;
+	GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowMultiThreadedShaderCompile"), bAllowMultiThreadedShaderCompile, GEngineIni );
+	bAllowDistributedShaderCompile = FALSE;
+	GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bAllowDistributedShaderCompile"), bAllowDistributedShaderCompile, GEngineIni );
 	// DISHONORED(retail): neither exe has a shader compiler (no FShaderCompilingThreadManager function, no "DevOptions.Shaders"
 	// string); the retail BaseEngine.ini:502 section lacks this build-machine key and PrecompileShadersJobThreshold, so the
 	// reference-only manager reads them without verify (defaults FALSE / 0)
@@ -463,8 +465,8 @@ FShaderCompilingThreadManager::FShaderCompilingThreadManager() :
 		bAllowDistributedShaderCompile = TRUE;
 	}
 
-	INT TempValue;
-	verify(GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("NumUnusedShaderCompilingThreads"), TempValue, GEngineIni ));
+	INT TempValue = 0;
+	GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("NumUnusedShaderCompilingThreads"), TempValue, GEngineIni );
 	NumUnusedShaderCompilingThreads = TempValue;
 	// Use all the cores on the build machines
 	if (GIsBuildMachine || ParseParam(appCmdLine(), TEXT("USEALLAVAILABLECORES")))
@@ -478,12 +480,16 @@ FShaderCompilingThreadManager::FShaderCompilingThreadManager() :
 		// XGE only allows one task to be instigated per machine at any time
 		bAllowDistributedShaderCompile = FALSE;
 	}
-	verify(GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("ThreadedShaderCompileThreshold"), TempValue, GEngineIni ));
-	ThreadedShaderCompileThreshold = TempValue;
-	verify(GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("MaxShaderJobBatchSize"), MaxShaderJobBatchSize, GEngineIni ));
+	INT TempThreshold = 10;
+	GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("ThreadedShaderCompileThreshold"), TempThreshold, GEngineIni );
+	ThreadedShaderCompileThreshold = TempThreshold;
+	MaxShaderJobBatchSize = 10;
+	GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("MaxShaderJobBatchSize"), MaxShaderJobBatchSize, GEngineIni );
 	GConfig->GetInt( TEXT("DevOptions.Shaders"), TEXT("PrecompileShadersJobThreshold"), PrecompileShadersJobThreshold, GEngineIni );	// DISHONORED(retail): see above
-	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bDumpShaderPDBs"), bDumpShaderPDBs, GEngineIni ));
-	verify(GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bPromptToRetryFailedShaderCompiles"), bPromptToRetryFailedShaderCompiles, GEngineIni ));
+	bDumpShaderPDBs = FALSE;
+	GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bDumpShaderPDBs"), bDumpShaderPDBs, GEngineIni );
+	bPromptToRetryFailedShaderCompiles = FALSE;
+	GConfig->GetBool( TEXT("DevOptions.Shaders"), TEXT("bPromptToRetryFailedShaderCompiles"), bPromptToRetryFailedShaderCompiles, GEngineIni );
 
 	GRetryShaderCompilation = bPromptToRetryFailedShaderCompiles;
 

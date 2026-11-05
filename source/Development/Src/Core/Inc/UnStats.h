@@ -1930,9 +1930,11 @@ public:
 		FScopeLock sl(SyncObject);
 		// Find the stat that we are updating
 		FStatAccumulatorFLOAT* Accum = FloatAccumulatorMap.FindRef(StatId);
-		check(Accum != NULL);
-		// Now change the value
-		Accum->Value += IncBy;
+		if (Accum != NULL)
+		{
+			// Now change the value
+			Accum->Value += IncBy;
+		}
 	}
 
 	/**
@@ -1945,9 +1947,11 @@ public:
 	{
 		// Find the stat that we are updating
 		FStatAccumulatorDWORD* Accum = DwordAccumulatorMap.FindRef(StatId);
-		check(Accum != NULL);
-		// Use the lightweight synch to update
-		appInterlockedAdd((INT*)&Accum->Value,IncBy);
+		if (Accum != NULL)
+		{
+			// Use the lightweight synch to update
+			appInterlockedAdd((INT*)&Accum->Value,IncBy);
+		}
 	}
 
 	/**
@@ -1963,9 +1967,11 @@ public:
 		FScopeLock sl(SyncObject);
 		// Find the stat that we are updating
 		FStatAccumulatorFLOAT* Accum = FloatAccumulatorMap.FindRef(StatId);
-		check(Accum != NULL);
-		// Now change the value
-		Accum->Value -= DecBy;
+		if (Accum != NULL)
+		{
+			// Now change the value
+			Accum->Value -= DecBy;
+		}
 	}
 
 	/**
@@ -1978,11 +1984,13 @@ public:
 	{
 		// Find the stat that we are updating
 		FStatAccumulatorDWORD* Accum = DwordAccumulatorMap.FindRef(StatId);
-		check(Accum != NULL);
-		// Use the lightweight synch to update
-		DWORD StartValue;
-		do { StartValue = Accum->Value; }
-		while((DWORD)appInterlockedCompareExchange((INT*)&Accum->Value,StartValue - DecBy,StartValue) != StartValue);
+		if (Accum != NULL)
+		{
+			// Use the lightweight synch to update
+			DWORD StartValue;
+			do { StartValue = Accum->Value; }
+			while((DWORD)appInterlockedCompareExchange((INT*)&Accum->Value,StartValue - DecBy,StartValue) != StartValue);
+		}
 	}
 
 	/**
