@@ -3,7 +3,7 @@
 # (Launch.cpp, LaunchEngineLoop.cpp, LaunchMisc.cpp; PIB.cpp is the _WINDLL "plugin in browser"
 # build and is not needed) plus DishonoredStubs.cpp, the empty registrant/name hooks and globals
 # for the modules that are not built yet (see resources/docs/agents/agentN.md).
-option(DISHONORED_REAL_LAUNCH "Compile the reference Launch sources instead of the stub entry point" OFF)
+option(DISHONORED_REAL_LAUNCH "Compile the reference Launch sources instead of the stub entry point" ON)
 
 if(DISHONORED_REAL_LAUNCH)
   if(NOT TARGET Engine)
@@ -40,10 +40,14 @@ if(DISHONORED_REAL_LAUNCH)
     DISHONORED_HAVE_OSS=$<BOOL:$<TARGET_EXISTS:OnlineSubsystemSteamworks>>
     DISHONORED_HAVE_DISHONOREDGAME=$<BOOL:$<TARGET_EXISTS:DishonoredGameModule>>)
   dishonored_apply_defines(DishonoredGame)
-  target_compile_options(DishonoredGame PRIVATE ${DISHONORED_MSVC_WARNINGS})
-  # UnVcWin32.cpp's stack walker needs symbols; keep the PDB next to the exe (Ninja default) and
-  # make the map file available for link-error analysis.
-  target_link_options(DishonoredGame PRIVATE /MAP:$<TARGET_FILE_DIR:DishonoredGame>/DishonoredGame.map)
+  if(MSVC)
+    target_compile_options(DishonoredGame PRIVATE ${DISHONORED_MSVC_WARNINGS})
+    # UnVcWin32.cpp's stack walker needs symbols; keep the PDB next to the exe (Ninja default) and
+    # make the map file available for link-error analysis.
+    target_link_options(DishonoredGame PRIVATE /MAP:$<TARGET_FILE_DIR:DishonoredGame>/DishonoredGame.map)
+  else()
+    target_compile_options(DishonoredGame PRIVATE ${DISHONORED_CLANG_WARNINGS})
+  endif()
 else()
   add_executable(DishonoredGame WIN32 Src/DishonoredLaunchStub.cpp)
 endif()

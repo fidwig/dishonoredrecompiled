@@ -32,10 +32,14 @@ void GFxLogf(const char* fmt, ...)
 // The Windows headers insist on the default 8-byte packing, and the engine compiles every unit with
 // UE3's /Zp4 (cmake/DishonoredDefines.cmake), so they go inside a pack(8) window - the same thing
 // WinDrv's PreWindowsApi.h / PostWindowsApi.h do for the rest of the tree.
+#if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #pragma pack(push, 8)
 #include <windows.h>
 #pragma pack(pop)
+#else
+#include <pthread.h>
+#endif
 
 // GArray's allocator. The runtime routes this through GMemory/GMemoryHeap; until the allocator seam
 // is live (FGFxAllocator, GFxUI/Inc/gfxuiallocator.h) the CRT heap is the right bring-up answer,
@@ -51,6 +55,7 @@ void GFx3ArrayFree(void* p)
     if (p) free(p);
 }
 
+#if defined(_WIN32)
 // GLock: PDB layout is a _RTL_CRITICAL_SECTION by value at @0, sizeof 24. csStorage is that
 // critical section; the static assertion keeps the two in step.
 static_assert(sizeof(CRITICAL_SECTION) <= sizeof(void*) * 6,
@@ -75,6 +80,41 @@ void GLock::Unlock()
 {
     LeaveCriticalSection((CRITICAL_SECTION*)csStorage);
 }
+#else
+GLock::GLock()
+{
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_t* m = new pthread_mutex_t;
+    pthread_mutex_init(m, &attr);
+    pthread_mutexattr_destroy(&attr);
+    csStorage[0] = m;
+}
+
+GLock::~GLock()
+{
+    pthread_mutex_t* m = (pthread_mutex_t*)csStorage[0];
+    if (m)
+    {
+        pthread_mutex_destroy(m);
+        delete m;
+        csStorage[0] = nullptr;
+    }
+}
+
+void GLock::DoLock()
+{
+    pthread_mutex_t* m = (pthread_mutex_t*)csStorage[0];
+    if (m) pthread_mutex_lock(m);
+}
+
+void GLock::Unlock()
+{
+    pthread_mutex_t* m = (pthread_mutex_t*)csStorage[0];
+    if (m) pthread_mutex_unlock(m);
+}
+#endif
 
 template<>
 bool GFxLogBase<GFxLog>::IsVerboseActionErrors() const

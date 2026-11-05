@@ -4,14 +4,29 @@
 # Dishonored Shipping exe actually links (resources/docs/module_map.md). UnBuild.h itself is
 # never edited; every switch is overridden from here.
 
+if(APPLE)
+  set(DISHONORED_PLATFORM_DEFINES
+    PLATFORM_MACOSX=1
+    PLATFORM_UNIX=1
+    PLATFORM_DESKTOP=1
+    __APPLE__=1
+    ENABLE_VECTORINTRINSICS=0
+    UNICODE
+    _UNICODE
+  )
+else()
+  set(DISHONORED_PLATFORM_DEFINES
+    _WINDOWS=1
+    WIN32=1
+    _WIN32_WINNT=0x0502
+    WINVER=0x0502
+    UNICODE
+    _UNICODE
+  )
+endif()
+
 set(DISHONORED_DEFINES
-  # UE3BuildWin32.cs: platform
-  _WINDOWS=1
-  WIN32=1
-  _WIN32_WINNT=0x0502
-  WINVER=0x0502
-  UNICODE
-  _UNICODE
+  ${DISHONORED_PLATFORM_DEFINES}
   # LaunchGames.h assigns 2..8 to Epic's games; Dishonored takes the next free slot
   GAMENAME=DISHONOREDGAME
   DISHONOREDGAME=9
@@ -96,7 +111,11 @@ set(DISHONORED_DEFINES_RELEASE NDEBUG FINAL_RELEASE=0 SHIPPING_PC_GAME=0)
 set(DISHONORED_DEFINES_SHIPPING NDEBUG FINAL_RELEASE=1 SHIPPING_PC_GAME=1 NO_LOGGING=1)
 
 option(DISHONORED_SHIPPING "Build with the Shipping switches (FINAL_RELEASE, SHIPPING_PC_GAME, NO_LOGGING)" OFF)
-option(DISHONORED_LAYOUT_CHECKS "Compile the PDB-derived static_assert layout checks" ON)
+if(APPLE)
+  option(DISHONORED_LAYOUT_CHECKS "Compile the PDB-derived static_assert layout checks" OFF)
+else()
+  option(DISHONORED_LAYOUT_CHECKS "Compile the PDB-derived static_assert layout checks" ON)
+endif()
 # The playable build bakes its switches into the executable (Core/Src/UnMisc.cpp). Never set this for a
 # harness build: run_regression.py drives the game with exact command lines and its thresholds are
 # calibrated to them.
@@ -104,10 +123,10 @@ option(DISHONORED_PLAY_DEFAULTS "Bake the play switches into the executable so i
 
 function(dishonored_apply_defines target)
   target_compile_definitions(${target} PRIVATE ${DISHONORED_DEFINES})
-  # UE3 is built with 4-byte struct packing (UnrealBuildTool VCToolChain.cs); the PDB layouts and the
-  # cooked packages assume it (UProperty::PropertyFlags QWORD at 68, ULinkerLoad::TickStartTime at 1628).
-  # Windows API headers are wrapped by WinDrv's PreWindowsApi.h (pack 8) / PostWindowsApi.h.
-  target_compile_options(${target} PRIVATE /Zp4)
+  # UE3 is built with 4-byte struct packing on Win32 (UnrealBuildTool VCToolChain.cs)
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /Zp4)
+  endif()
   if(DISHONORED_SHIPPING)
     target_compile_definitions(${target} PRIVATE ${DISHONORED_DEFINES_SHIPPING})
   else()

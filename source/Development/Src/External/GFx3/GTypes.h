@@ -20,9 +20,18 @@
 #define INC_GFX3_GTYPES_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <math.h>
 #include <new>
+#if defined(_MSC_VER)
 #include <intrin.h>
+#else
+#define __int64 long long
+#define _snprintf snprintf
+#define _vsnprintf vsnprintf
+#define _stricmp strcasecmp
+#define _strnicmp strncasecmp
+#endif
 
 #pragma pack(push, 8)
 
@@ -37,8 +46,8 @@ typedef short              GInt16;
 typedef unsigned short     GUInt16;
 typedef int                GInt32;
 typedef unsigned int       GUInt32;
-typedef __int64            GInt64;
-typedef unsigned __int64   GUInt64;
+typedef int64_t            GInt64;
+typedef uint64_t           GUInt64;
 typedef unsigned int       GUInt;
 typedef int                GInt;
 typedef size_t             GUPInt;
@@ -203,13 +212,19 @@ public:
     operator T() const { return this->Value; }
     T operator++()
     {
-        static_assert(sizeof(T) == sizeof(long), "GAtomicInt is interlocked on 32-bit values only");
+#if defined(_MSC_VER)
         return (T)_InterlockedIncrement((volatile long*)&this->Value);
+#else
+        return (T)__sync_add_and_fetch(&this->Value, 1);
+#endif
     }
     T operator--()
     {
-        static_assert(sizeof(T) == sizeof(long), "GAtomicInt is interlocked on 32-bit values only");
+#if defined(_MSC_VER)
         return (T)_InterlockedDecrement((volatile long*)&this->Value);
+#else
+        return (T)__sync_sub_and_fetch(&this->Value, 1);
+#endif
     }
 };
 
@@ -325,11 +340,11 @@ public:
     union
     {
         DataDesc*    pData;
-        unsigned int HeapTypeBits;
+        uintptr_t    HeapTypeBits;
     };
 
     GString() : pData(0) {}
-    DataDesc* GetData() const { return (DataDesc*)(HeapTypeBits & ~(unsigned int)HT_Mask); }
+    DataDesc* GetData() const { return (DataDesc*)(HeapTypeBits & ~(uintptr_t)HT_Mask); }
     const char* ToCStr() const { DataDesc* d = GetData(); return d ? d->Data : ""; }
     unsigned int GetSize() const
     {

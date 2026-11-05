@@ -313,6 +313,7 @@ void GFxDK_NoteFilter(unsigned char kind, const char* name)
             GFxDL_FilterKindName(kind), (name && name[0]) ? name : "<unnamed>");
 }
 
+#if !defined(__LP64__) && !defined(_WIN64)
 // DISHONORED(layout): the 156 bytes retail reads and writes. Params at +8 is what
 // GFxDisplayContext::EndFilters (0xa53d90) copies into a GRenderer::BlurFilterParams; the 20
 // colour-matrix floats fill +76..+155.
@@ -321,6 +322,7 @@ static_assert(offsetof(GFxFilterDesc, Angle) == 2, "GFxFilterDesc::Angle is at +
 static_assert(offsetof(GFxFilterDesc, Distance) == 4, "GFxFilterDesc::Distance is at +4");
 static_assert(offsetof(GFxFilterDesc, Params) == 8, "GFxFilterDesc::Params is at +8");
 static_assert(offsetof(GFxFilterDesc, ColorMatrix) == 76, "GFxFilterDesc::ColorMatrix is at +76");
+#endif
 
 // DISHONORED(port): the default descriptor, 2013 0x9c5a10. Blur 5 by 5, one pass, strength 1.
 GFxFilterDesc::GFxFilterDesc()

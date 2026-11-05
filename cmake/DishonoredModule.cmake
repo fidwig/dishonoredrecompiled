@@ -34,6 +34,22 @@ set(DISHONORED_MSVC_WARNINGS
   /wd4996  # deprecated CRT functions
 )
 
+set(DISHONORED_CLANG_WARNINGS
+  -Wno-unused-parameter
+  -Wno-unused-variable
+  -Wno-unused-private-field
+  -Wno-sign-compare
+  -Wno-invalid-offsetof
+  -Wno-reorder-ctor
+  -Wno-c++11-narrowing
+  -Wno-deprecated-declarations
+  -Wno-writable-strings
+  -Wno-delete-non-virtual-dtor
+  -Wno-nullability-completeness
+  -Wno-missing-braces
+  -Wno-switch
+)
+
 set(DISHONORED_MODULE_LIST "" CACHE INTERNAL "modules declared so far, in order")
 option(DISHONORED_USE_PCH "Use <Module>Private.h as a CMake precompiled header (see note in dishonored_module)" OFF)
 
@@ -97,7 +113,11 @@ function(dishonored_module name)
   endif()
 
   dishonored_apply_defines(${target})
-  target_compile_options(${target} PRIVATE ${DISHONORED_MSVC_WARNINGS})
+  if(MSVC)
+    target_compile_options(${target} PRIVATE ${DISHONORED_MSVC_WARNINGS})
+  else()
+    target_compile_options(${target} PRIVATE ${DISHONORED_CLANG_WARNINGS})
+  endif()
   set_target_properties(${target} PROPERTIES FOLDER "Engine")
 
   set(DISHONORED_MODULE_LIST "${DISHONORED_MODULE_LIST};${target}" CACHE INTERNAL "modules declared so far, in order")

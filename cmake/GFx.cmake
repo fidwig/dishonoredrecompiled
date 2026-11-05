@@ -99,7 +99,9 @@ if(DISHONORED_WITH_GFX3)
   # UE3's 4-byte packing, the same option every module gets. The GFx headers push pack(8) of their
   # own, because GFx itself was not built with /Zp4: GFxValue::DisplayInfo puts `bool Visible` at @48
   # and the next `double Z` at @56, i.e. 8-byte alignment, and the struct is 232 bytes.
-  target_compile_options(gfx3 PRIVATE /Zp4)
+  if(MSVC)
+    target_compile_options(gfx3 PRIVATE /Zp4)
+  endif()
   set_target_properties(gfx3 PROPERTIES FOLDER "External")
 
   add_library(Dishonored::gfx3 INTERFACE IMPORTED)
@@ -117,7 +119,9 @@ if(DISHONORED_WITH_GFX3)
     "${_gfx3_seam_dir}/Src/gfxuiallocator.cpp")
   target_include_directories(GFx3Dump PRIVATE "${_gfx3_seam_dir}/Inc")
   target_compile_definitions(GFx3Dump PRIVATE _CRT_SECURE_NO_WARNINGS)
-  target_compile_options(GFx3Dump PRIVATE /Zp4)
+  if(MSVC)
+    target_compile_options(GFx3Dump PRIVATE /Zp4)
+  endif()
   target_link_libraries(GFx3Dump PRIVATE gfx3)
   set_target_properties(GFx3Dump PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
@@ -131,9 +135,11 @@ if(DISHONORED_WITH_GFX3)
   add_executable(GFx3Run EXCLUDE_FROM_ALL "${DISHONORED_GFX3_DIR}/Tools/GFx3Run.cpp")
   # A crash in the machine prints its stack as module-relative addresses (agent DG); the map is what
   # turns them back into names, with build/agentDG/map.py.
-  target_link_options(GFx3Run PRIVATE /MAP:$<TARGET_FILE_DIR:GFx3Run>/GFx3Run.map)
+  if(MSVC)
+    target_link_options(GFx3Run PRIVATE /MAP:$<TARGET_FILE_DIR:GFx3Run>/GFx3Run.map)
+    target_compile_options(GFx3Run PRIVATE /Zp4)
+  endif()
   target_compile_definitions(GFx3Run PRIVATE _CRT_SECURE_NO_WARNINGS)
-  target_compile_options(GFx3Run PRIVATE /Zp4)
   target_link_libraries(GFx3Run PRIVATE gfx3)
   set_target_properties(GFx3Run PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"
@@ -149,7 +155,9 @@ if(DISHONORED_WITH_GFX3)
   #   <dir>/Binaries/Win32/GFx3Text.exe --table
   add_executable(GFx3Text EXCLUDE_FROM_ALL "${DISHONORED_GFX3_DIR}/Tools/GFx3Text.cpp")
   target_compile_definitions(GFx3Text PRIVATE _CRT_SECURE_NO_WARNINGS)
-  target_compile_options(GFx3Text PRIVATE /Zp4)
+  if(MSVC)
+    target_compile_options(GFx3Text PRIVATE /Zp4)
+  endif()
   target_link_libraries(GFx3Text PRIVATE gfx3)
   set_target_properties(GFx3Text PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Binaries/Win32"

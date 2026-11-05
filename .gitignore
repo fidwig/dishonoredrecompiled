@@ -1,3 +1,26 @@
+# MacOS system files
+.DS_Store
+._*
+
+# Retail game symlinks and content at workspace root
+/DishonoredGame
+/Engine
+*.bik
+*.bk2
+*.bnk
+
+# Mach-O / Unix build artifacts and debug symbols
+*.o
+*.a
+*.dylib
+*.so
+*.dSYM/
+
+# Local IDEs and agent state
+.agent/
+.vscode/
+.idea/
+
 # Raw decompiler output and IDA database snapshots never enter the repo
 reference/
 docs/idb/

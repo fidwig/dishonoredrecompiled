@@ -24,7 +24,9 @@
 # Off by default only when the reconstruction is missing; it lives in the tree, so ON is the default.
 
 set(DISHONORED_PHYSX_DIR "${CMAKE_SOURCE_DIR}/source/Development/Src/External/PhysX284")
-if(EXISTS "${DISHONORED_PHYSX_DIR}/NxPhysics.h")
+if(APPLE)
+  set(_dishonored_physx_default OFF)
+elseif(EXISTS "${DISHONORED_PHYSX_DIR}/NxPhysics.h")
   set(_dishonored_physx_default ON)
 else()
   set(_dishonored_physx_default OFF)
@@ -49,7 +51,9 @@ if(DISHONORED_WITH_PHYSX)
   add_library(physx284 STATIC "${DISHONORED_PHYSX_DIR}/NxAllocatorDefault.cpp")
   target_include_directories(physx284 PUBLIC "${DISHONORED_PHYSX_DIR}")
   target_link_libraries(physx284 PUBLIC physxloader_stub)
-  target_compile_options(physx284 PRIVATE /Zp4)
+  if(MSVC)
+    target_compile_options(physx284 PRIVATE /Zp4)
+  endif()
   set_target_properties(physx284 PROPERTIES FOLDER "External")
 
   add_library(Dishonored::physx INTERFACE IMPORTED)

@@ -72,7 +72,9 @@ target_include_directories(Dishonored::libPNG INTERFACE "${libpng_SOURCE_DIR}" "
 dishonored_fetch(nvapi https://github.com/NVIDIA/nvapi.git 70d337db9186e968eab622f7e786de7e437faf3d)
 add_library(Dishonored::nvapi INTERFACE IMPORTED)
 target_include_directories(Dishonored::nvapi INTERFACE "${nvapi_SOURCE_DIR}")
-target_link_libraries(Dishonored::nvapi INTERFACE "${nvapi_SOURCE_DIR}/x86/nvapi.lib")
+if(MSVC)
+  target_link_libraries(Dishonored::nvapi INTERFACE "${nvapi_SOURCE_DIR}/x86/nvapi.lib")
+endif()
 
 # lzokay: LZO1X-1 compressor/decompressor (MIT, C++14, stream-compatible with LZO1X). Every cooked
 # package is PKG_StoreCompressed with CompressionFlags=2 = COMPRESS_LZO; the retail exe links LZO

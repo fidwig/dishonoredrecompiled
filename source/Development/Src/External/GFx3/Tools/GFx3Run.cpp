@@ -23,7 +23,9 @@
 #include <string.h>
 #include <exception>
 #include <new>
+#if defined(_MSC_VER)
 #include <intrin.h>
+#endif
 
 #ifdef _WIN32
 // The whole GFx3 reconstruction compiles with /Zp4 (retail's packing) and the Windows headers

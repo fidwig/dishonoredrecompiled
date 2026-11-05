@@ -4,10 +4,15 @@
 // reconstruction agrees with the PDB byte for byte.
 #include "GFx3.h"
 
+#if !defined(__LP64__) && !defined(_WIN64)
 #define GFX3_ASSERT_SIZE(T, N) \
     static_assert(sizeof(T) == (N), "GFx3 layout: sizeof(" #T ") != " #N)
 #define GFX3_ASSERT_OFFSET(T, M, N) \
     static_assert(offsetof(T, M) == (N), "GFx3 layout: offsetof(" #T ", " #M ") != " #N)
+#else
+#define GFX3_ASSERT_SIZE(T, N)
+#define GFX3_ASSERT_OFFSET(T, M, N)
+#endif
 
 GFX3_ASSERT_SIZE(GAllocDebugInfo, 4);
 GFX3_ASSERT_OFFSET(GAllocDebugInfo, StatId, 0);

@@ -28,7 +28,12 @@
 # The shipped DLL stays in the retail tree (DISHONORED_RETAIL_DIR) and is never copied or staged.
 # See resources/docs/middleware.md section 2.6.
 
-option(DISHONORED_WITH_STEAMWORKS "Compile the Steamworks client path (WITH_STEAMWORKS=1) and link the steam_api.dll import library" ON)
+if(APPLE)
+  set(_dishonored_steam_default OFF)
+else()
+  set(_dishonored_steam_default ON)
+endif()
+option(DISHONORED_WITH_STEAMWORKS "Compile the Steamworks client path (WITH_STEAMWORKS=1) and link the steam_api.dll import library" ${_dishonored_steam_default})
 
 set(DISHONORED_STEAMWORKS_DIR "${CMAKE_SOURCE_DIR}/source/Development/Src/External/SteamworksFlat")
 if(DISHONORED_WITH_STEAMWORKS AND NOT EXISTS "${DISHONORED_STEAMWORKS_DIR}/steam/steam_api.h")
