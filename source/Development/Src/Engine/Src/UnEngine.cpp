@@ -3,6 +3,9 @@
 =============================================================================*/
 
 #include "EnginePrivate.h"
+#if PLATFORM_MACOSX
+#include "UnMacClient.h"
+#endif
 #include "EngineMaterialClasses.h"
 #include "DebugCameraController.h"
 #include "UnTerrain.h"
@@ -186,7 +189,6 @@ PRAGMA_DISABLE_OPTIMIZATION
 #include "EngineProcBuildingClasses.h"
 #include "EngineCameraClasses.h"
 #include "EnginePlatformInterfaceClasses.h"
-
 // needed for the intrinsic UObject, that is outside of #if DWTRIOVIZSDK
 #include "DwTrioviz/DwTriovizImpl.h"
 
@@ -296,6 +298,9 @@ void AutoInitializeRegistrantsEngine( INT& Lookup )
 	UArkSettingsListenerInterface::StaticClass();
 	ADebugCameraController::StaticClass();
 	GNativeLookupFuncs.Set(FName("DebugCameraController"), GEngineADebugCameraControllerNatives);
+#if PLATFORM_MACOSX
+	UMacClient::StaticClass();
+#endif
 }
 
 /**

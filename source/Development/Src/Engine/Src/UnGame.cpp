@@ -26,6 +26,9 @@
 #include "AVIWriter.h"
 #include "StreamingPauseRendering.h"
 #include "FScopedMemoryStats.h"
+#if PLATFORM_MACOSX
+#include "UnMacClient.h"
+#endif
 
 #if _WINDLL
 #include "PIB.h"
@@ -231,8 +234,21 @@ void UGameEngine::Init()
 	{	
 		// Init client.
 		UClass* ClientClass = StaticLoadClass( UClient::StaticClass(), NULL, TEXT("engine-ini:Engine.Engine.Client"), NULL, LOAD_None, NULL );
-		Client = ConstructObject<UClient>( ClientClass );
-		Client->Init( this );
+#if PLATFORM_MACOSX
+		if( !ClientClass )
+		{
+			ClientClass = UMacClient::StaticClass();
+		}
+#endif
+		if( ClientClass )
+		{
+			Client = ConstructObject<UClient>( ClientClass );
+			Client->Init( this );
+		}
+		else
+		{
+			appErrorf( TEXT("Failed to load Client class: %s"), *GConfig->GetStr(TEXT("Engine.Engine"), TEXT("Client"), GEngineIni) );
+		}
 	}
 
 
