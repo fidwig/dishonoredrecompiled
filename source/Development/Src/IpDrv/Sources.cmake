@@ -8,6 +8,11 @@ set(IpDrv_EXCLUDE
   Src/UdpLink.cpp
   Src/UCompressCommandlet.cpp
 )
+if(APPLE)
+  list(APPEND IpDrv_EXCLUDE
+    Src/UnSocketWin.cpp
+  )
+endif()
 set(IpDrv_NOT_IN_PDB
   Src/ClientBeaconAddressResolver.cpp
   Src/FDebugServer.cpp
