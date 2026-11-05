@@ -327,6 +327,12 @@ We are porting the reconstructed retail Dishonored (2013) engine (`dishonoredrec
     - Level brought up for play: `Log: Bringing World DishonoredGameFull_P.TheWorld up for play (0) at 2026.11.05-23.25.20`.
     - Main engine loop entered `FEngineLoop::Tick` and continuously and stably rendered 3,700+ frames (scene census, draw lists, DisFog post-processing, bloom passes) at 1920x1080.
     - Clean shutdown verified. All Phase 2 Core Engine milestones are now completely accomplished!
+14. **Build Monitor v3 with Metal 4 & `d9mt` Subsystem Visibility**:
+    - Created `.build_monitoring/monitor_build_v3.py` keeping `monitor_build_v2.py` fully intact.
+    - Implemented dynamic task log discovery across all brain directories sorted by `mtime` (no hardcoded UUIDs).
+    - Added process detection for Apple Metal compilers (`metal`, `metallib`, `air-lld`).
+    - Added subsystem classification for `d9mt` Metal translation layer and `D3D9Drv`.
+    - Specialized phase detection to distinguish intermediate static RHI archives (`libd9mt.a` / `libD3D9Drv.a`) from executable links (`DishonoredGame`).
 
 ---
 
