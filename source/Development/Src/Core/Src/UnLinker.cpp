@@ -4,6 +4,8 @@
 =============================================================================*/
 
 #include "CorePrivate.h"
+
+extern void CheckTrackedCDO(const TCHAR* Where, const TCHAR* Extra);
 #include "DebuggingDefines.h"
 #include "CrossLevelReferences.h"
 
@@ -3786,7 +3788,15 @@ void ULinkerLoad::Preload( UObject* Object )
 				// Make sure we serialized the right amount of stuff.
 				if( Tell()-Export.SerialOffset != Export.SerialSize )
 				{
-					appErrorf( LocalizeSecure(LocalizeError(TEXT("SerialSize"),TEXT("Core")), *Object->GetFullName(), Tell()-Export.SerialOffset, Export.SerialSize) );
+					if( ParseParam(appCmdLine(), TEXT("allowunboundnatives")) )
+					{
+						warnf(TEXT("DISHONORED(bringup): Serial size mismatch on %s: Got %d, Expected %d (skipping trailing native bytes under -allowunboundnatives)"),
+							*Object->GetFullName(), (int)(Tell()-Export.SerialOffset), (int)Export.SerialSize);
+					}
+					else
+					{
+						appErrorf( LocalizeSecure(LocalizeError(TEXT("SerialSize"),TEXT("Core")), *Object->GetFullName(), Tell()-Export.SerialOffset, Export.SerialSize) );
+					}
 				}
 
 				Loader->Seek( SavedPos );
@@ -3829,6 +3839,7 @@ void ULinkerLoad::Preload( UObject* Object )
 			Object->GetLinker()->Preload( Object );
 		}
 	}
+	CheckTrackedCDO(TEXT("Preload"), Object ? *Object->GetPathName() : TEXT(""));
 }
 
 /**

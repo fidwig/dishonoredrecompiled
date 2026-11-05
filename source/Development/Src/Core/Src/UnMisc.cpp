@@ -3865,13 +3865,19 @@ void FMapPackageFileCache::CachePath( const TCHAR* InPath)
 	FixedPath = appConvertRelativePathToFull(FixedPath); 
 #endif
 
-	if (appGetPlatformType() & UE3::PLATFORM_WindowsConsole)
+	if ((appGetPlatformType() & UE3::PLATFORM_WindowsConsole) || GIsSeekFreePCConsole)
 	{
-		FixedPath = FixedPath.Replace(TEXT("\\CookedPC"),TEXT("\\CookedPCConsole"),TRUE);
+		if (FixedPath.InStr(TEXT("CookedPCConsole")) == INDEX_NONE)
+		{
+			FixedPath = FixedPath.Replace(TEXT("CookedPC"), TEXT("CookedPCConsole"));
+		}
 	}
 	else if (appGetPlatformType() & UE3::PLATFORM_WindowsServer)
 	{
-		FixedPath = FixedPath.Replace(TEXT("\\CookedPC"),TEXT("\\CookedPCServer"),TRUE);
+		if (FixedPath.InStr(TEXT("CookedPCServer")) == INDEX_NONE)
+		{
+			FixedPath = FixedPath.Replace(TEXT("CookedPC"), TEXT("CookedPCServer"));
+		}
 	}
 
 	appFindFilesInDirectory(Packages, *FixedPath, TRUE, FALSE);
@@ -4065,7 +4071,7 @@ UBOOL FMapPackageFileCache::FindPackageFile( const TCHAR* InName, const FGuid* G
 	FFilename BasePackageName = PackageFromPath(InName);
 
 	// We should first look up to see if the package name has a filename mapping
-	const FName PackageFName = FName::FName(*BasePackageName);
+	const FName PackageFName = FName(*BasePackageName);
 	const FName *MappedName = UObject::GetPackageNameToFileMapping()->Find(PackageFName);
 	if (MappedName != NULL)
 	{
@@ -4089,7 +4095,10 @@ UBOOL FMapPackageFileCache::FindPackageFile( const TCHAR* InName, const FGuid* G
 	//		LoadPackage(PackagePath);
 	//			GetPackageLinker(PackagePath);
 	//				PackagePath2 = FindPackageFile(PackagePath);
-	if (GFileManager->FileSize(InName)>0)
+	// DISHONORED(mac): On macOS/Unix, executables have no extension (e.g. "DishonoredGame" in Binaries/Mac).
+	// Without requiring an extension, FileSize("DishonoredGame") matches the binary itself instead of
+	// resolving the package file ("DishonoredGame.upk") from CookedPCConsole.
+	if (FFilename(InName).GetExtension().Len() > 0 && GFileManager->FileSize(InName)>0)
 	{
 		// Make sure we have it in the cache.
 		CachePackage( InName, 1 );
@@ -7006,7 +7015,7 @@ UE3::EPlatformType appPlatformStringToType(const FString& PlatformStr)
  */
 UE3::EPlatformType appGetPlatformType()
 {
-#if _MSC_VER && !XBOX
+#if !XBOX && !PS3 && !IPHONE && !ANDROID && !NGP && !WIIU && !FLASH
 	#if DEDICATED_SERVER
 		return UE3::PLATFORM_WindowsServer;
 	#else
@@ -7018,7 +7027,13 @@ UE3::EPlatformType appGetPlatformType()
 		{
 			return UE3::PLATFORM_WindowsServer;
 		}
+#if PLATFORM_MACOSX
+		return UE3::PLATFORM_MacOSX;
+#elif PLATFORM_LINUX
+		return UE3::PLATFORM_Linux;
+#else
 		return UE3::PLATFORM_Windows;
+#endif
 	#endif //DEDICATED_SERVER
 #elif XBOX
 	return UE3::PLATFORM_Xbox360;

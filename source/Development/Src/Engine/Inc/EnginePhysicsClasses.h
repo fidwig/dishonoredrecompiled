@@ -1102,7 +1102,12 @@ public:
     class USkeletalMesh* DefaultSkelMesh;
 #endif // WITH_EDITORONLY_DATA
     TArrayNoInit<class URB_BodySetup*> BodySetup;
-    TMap<FName, INT> BodySetupIndexMap;
+    // DISHONORED(port): In retail 32-bit cooked packages, BodySetupIndexMap is a transient Map_Mirror
+    // of 72 bytes at offset 120..192. On 64-bit C++, sizeof(TMap) is 80, which exceeds the 72 bytes
+    // allocated by StaticAllocateObject and corrupts the heap. Using a 72-byte buffer keeps C++ member
+    // offsets exactly aligned with retail cooked properties (total sizeof == 232), while FindBodyIndex
+    // performs a fast linear scan of the ~20 ragdoll bones.
+    BYTE BodySetupIndexMap_ScriptPadding[72];
     TArrayNoInit<INT> BoundsBodies;
     TArrayNoInit<class URB_ConstraintSetup*> ConstraintSetup;
     class UPhysicsAssetInstance* DefaultInstance;

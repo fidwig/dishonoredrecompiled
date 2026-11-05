@@ -597,14 +597,6 @@ void UPhysicsAsset::UpdateBoundsBodiesArray()
 /** Update the BoundsBodies array and cache the indices of bodies marked with bConsiderForBounds to BoundsBodies array. */
 void UPhysicsAsset::UpdateBodySetupIndexMap()
 {
-	// update BodySetupIndexMap
-	BodySetupIndexMap.Empty();
-
-	for(INT i=0; i<BodySetup.Num(); i++)
-	{
-		check(BodySetup(i));
-		BodySetupIndexMap.Set(BodySetup(i)->BoneName, i);
-	}
 }
 
 // Ensure 'Outers' of objects are correct.
@@ -668,11 +660,6 @@ void UPhysicsAsset::PostLoad()
 	if(BoundsBodies.Num() == 0)
 	{
 		UpdateBoundsBodiesArray();
-	}
-
-	if (BodySetup.Num() > 0 && BodySetupIndexMap.Num() == 0)
-	{
-		UpdateBodySetupIndexMap();
 	}
 }
 

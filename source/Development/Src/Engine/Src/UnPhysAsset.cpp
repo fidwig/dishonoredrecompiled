@@ -378,14 +378,13 @@ INT	UPhysicsAsset::FindControllingBodyIndex(class USkeletalMesh* skelMesh, INT S
 
 INT UPhysicsAsset::FindBodyIndex(FName bodyName)
 {
-	check( BodySetup.Num() == DefaultInstance->Bodies.Num() );
-
-	INT * IdxData = BodySetupIndexMap.Find(bodyName);
-	if (IdxData)
+	for(INT i=0; i<BodySetup.Num(); i++)
 	{
-		return *IdxData;
+		if(BodySetup(i) && BodySetup(i)->BoneName == bodyName)
+		{
+			return i;
+		}
 	}
-	
 	return INDEX_NONE;
 }
 

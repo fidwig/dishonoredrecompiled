@@ -35,6 +35,18 @@ void InitializePrivateStaticClass( class UClass* TClass_Super_StaticClass, class
 	}
 }
 
+UObject* GTrackedCDO = NULL;
+void* GTrackedCDOVTable = NULL;
+
+void CheckTrackedCDO(const TCHAR* Where, const TCHAR* Extra)
+{
+	if (GTrackedCDO && *(void**)GTrackedCDO != GTrackedCDOVTable)
+	{
+		appErrorf(TEXT("DISHONORED(bringup): CORRUPTION of %p at %s [%s]! vtable=%p, expected=%p"),
+			GTrackedCDO, Where, Extra ? Extra : TEXT(""), *(void**)GTrackedCDO, GTrackedCDOVTable);
+	}
+}
+
 /*-----------------------------------------------------------------------------
 	UField implementation.
 -----------------------------------------------------------------------------*/
@@ -578,7 +590,14 @@ void UStruct::SerializeBin( FArchive& Ar, BYTE* Data, INT MaxReadBytes ) const
 void DisStructDevLoadFallback( const UScriptStruct* Struct, BYTE* Data )
 {
 }
+#if defined(_MSC_VER)
 #pragma comment(linker, "/alternatename:?DisStructDevLoad@@YAXPBVUScriptStruct@@PAE@Z=?DisStructDevLoadFallback@@YAXPBVUScriptStruct@@PAE@Z")
+#else
+void __attribute__((weak)) DisStructDevLoad( const UScriptStruct* Struct, BYTE* Data )
+{
+	DisStructDevLoadFallback( Struct, Data );
+}
+#endif
 
 // DISHONORED(port): rva 0x4d70 Arkane override: after the binary load of a STRUCT_DevLoad struct through a DisSaveLoad archive
 // (FArchive::ArIsDisSaveLoad) DishonoredGame's DisStructDevLoad fixes the data up (from 2012 decompile)
@@ -1050,6 +1069,7 @@ void UStruct::SerializeTaggedProperties( FArchive& Ar, BYTE* Data, UStruct* Defa
 		FName Temp(NAME_None);
 		Ar << Temp;
 	}
+	CheckTrackedCDO(TEXT("SerializeTaggedProperties"), *GetPathName());
 }
 void UStruct::FinishDestroy()
 {
@@ -1522,6 +1542,7 @@ void UScriptStruct::Serialize( FArchive& Ar )
 
 	// mark the archive we that we are no longer serializing defaults
 	Ar.StopSerializingDefaults();
+	CheckTrackedCDO(TEXT("SerializeDefaultObject"), *GetPathName());
 }
 
 void UScriptStruct::PropagateStructDefaults()
@@ -1693,6 +1714,12 @@ UObject* UClass::GetDefaultObject( UBOOL bForce /* = FALSE */ )
 			if ( ParentDefaultObject != NULL || this == UObject::StaticClass() )
 			{
 				ClassDefaultObject = StaticConstructObject(this, GetOuter(), NAME_None, LoadFlags, ParentDefaultObject);
+				if (appStricmp(*GetName(), TEXT("ParticleModuleSubUV")) == 0)
+				{
+					GTrackedCDO = ClassDefaultObject;
+					GTrackedCDOVTable = *(void**)ClassDefaultObject;
+					warnf(TEXT("DISHONORED(bringup): Tracking ParticleModuleSubUV CDO at %p, vtable=%p"), GTrackedCDO, GTrackedCDOVTable);
+				}
 
 				// Perform static construction.
 				if( HasAnyFlags(RF_Native) && ClassDefaultObject != NULL )
@@ -2407,6 +2434,7 @@ void UClass::Serialize( FArchive& Ar )
 
 	// mark the archive we that we are no longer serializing defaults
 	Ar.StopSerializingDefaults();
+	CheckTrackedCDO(TEXT("SerializeDefaultObject"), *GetPathName());
 }
 
 /** serializes the passed in object as this class's default object using the given archive
@@ -2475,6 +2503,7 @@ void UClass::SerializeDefaultObject(UObject* Object, FArchive& Ar)
 		SerializeBin(Ar, (BYTE*)Object, 0);
 	}
 	Ar.StopSerializingDefaults();
+	CheckTrackedCDO(TEXT("SerializeDefaultObject"), *GetPathName());
 }
 
 void UClass::PropagateStructDefaults()
