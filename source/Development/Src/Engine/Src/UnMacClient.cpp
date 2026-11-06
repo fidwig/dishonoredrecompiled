@@ -166,6 +166,11 @@ static void appMacPumpCocoaEvents()
 	return YES;
 }
 
+- (BOOL)acceptsFirstMouse:(NSEvent *)event
+{
+	return YES;
+}
+
 - (BOOL)canBecomeKeyView
 {
 	return YES;
@@ -192,7 +197,8 @@ static void appMacPumpCocoaEvents()
 - (void)mouseDown:(NSEvent *)event
 {
 	if (!self.Viewport) return;
-	if (!self.Viewport->bCapturingMouseInput && self.Viewport->bIsFocused)
+	[[self window] makeFirstResponder:self];
+	if (!self.Viewport->bCapturingMouseInput)
 	{
 		self.Viewport->SetMouseCapture(TRUE);
 	}
@@ -208,7 +214,8 @@ static void appMacPumpCocoaEvents()
 - (void)rightMouseDown:(NSEvent *)event
 {
 	if (!self.Viewport) return;
-	if (!self.Viewport->bCapturingMouseInput && self.Viewport->bIsFocused)
+	[[self window] makeFirstResponder:self];
+	if (!self.Viewport->bCapturingMouseInput)
 	{
 		self.Viewport->SetMouseCapture(TRUE);
 	}
@@ -264,7 +271,7 @@ static void appMacPumpCocoaEvents()
 	if (self.Viewport->bCapturingMouseInput)
 	{
 		NSWindow* win = [self window];
-		if (win && (![win isKeyWindow] || ![NSApp isActive]))
+		if (win && ![win isKeyWindow] && ![win isMainWindow])
 		{
 			self.Viewport->OnWindowLostFocus();
 			return;
@@ -334,6 +341,7 @@ static void appMacPumpCocoaEvents()
 	FName keyName = MacKeyCodeToFName(kc);
 	if (keyName != NAME_None)
 	{
+		debugf(TEXT("Cocoa keyDown: kc=0x%x, name=%s"), kc, *keyName.ToString());
 		if (keyName == KEY_Escape && self.Viewport->bCapturingMouseInput)
 		{
 			self.Viewport->SetMouseCapture(FALSE);
@@ -814,7 +822,7 @@ void UMacClient::Tick(FLOAT DeltaTime)
 		if (VP && VP->bCapturingMouseInput)
 		{
 			NSWindow* Window = (__bridge NSWindow*)VP->WindowHandle;
-			if (Window && (![Window isKeyWindow] || ![NSApp isActive]))
+			if (Window && ![Window isKeyWindow] && ![Window isMainWindow])
 			{
 				VP->OnWindowLostFocus();
 			}

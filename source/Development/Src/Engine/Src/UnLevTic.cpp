@@ -1251,6 +1251,8 @@ static void DishonoredPlayerTick( APlayerController* PC, FLOAT DeltaTime )
 
 	if( PC->PlayerInput )
 	{
+		PC->UpdateRotation( DeltaTime );
+
 		if( PC->Pawn )
 		{
 			PC->PlayerMove_Walking( DeltaTime );
@@ -1259,7 +1261,7 @@ static void DishonoredPlayerTick( APlayerController* PC, FLOAT DeltaTime )
 			const FLOAT Forward = PC->PlayerInput->aForward;
 			const FLOAT Strafe = PC->PlayerInput->aStrafe;
 			const FLOAT Up = PC->PlayerInput->aUp;
-			if( (PC->bRun != 0) || Up != 0.0f || PC->Pawn->Physics != PHYS_Walking || (PC->Pawn->Acceleration.IsZero() && (Forward != 0.0f || Strafe != 0.0f)) )
+			if( (PC->bRun != 0) || Up != 0.0f || PC->Pawn->Physics != PHYS_Walking || (Forward != 0.0f || Strafe != 0.0f) )
 			{
 				const FRotationMatrix CamMatrix( PC->Rotation );
 				FVector MoveDir = CamMatrix.GetAxis( 0 ) * Forward + CamMatrix.GetAxis( 1 ) * Strafe + FVector( 0.f, 0.f, 1.f ) * Up;
@@ -1273,8 +1275,6 @@ static void DishonoredPlayerTick( APlayerController* PC, FLOAT DeltaTime )
 		}
 		else
 		{
-			PC->UpdateRotation( DeltaTime );
-
 			// Free spectator camera movement when no pawn is spawned (e.g. bring-up exploration):
 			const FLOAT Forward = PC->PlayerInput->aForward;
 			const FLOAT Strafe = PC->PlayerInput->aStrafe;

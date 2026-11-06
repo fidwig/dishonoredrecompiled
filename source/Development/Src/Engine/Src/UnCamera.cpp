@@ -1388,11 +1388,11 @@ void ACamera::UpdateViewTarget( FTViewTarget& OutVT, FLOAT DeltaTime )
 			Parms.out_FOV = OutVT.POV.FOV;
 			Parms.ReturnValue = FALSE;
 			TargetPawn->ProcessEvent( CalcCamera, &Parms );
-			OutVT.POV.Location = Parms.out_CamLoc;
-			OutVT.POV.Rotation = Parms.out_CamRot;
-			OutVT.POV.FOV = Parms.out_FOV;
 			if( Parms.ReturnValue )
 			{
+				OutVT.POV.Location = Parms.out_CamLoc;
+				OutVT.POV.Rotation = Parms.out_CamRot;
+				OutVT.POV.FOV = Parms.out_FOV;
 				ApplyCameraModifiers( DeltaTime, OutVT.POV );
 				return;
 			}
@@ -1404,28 +1404,45 @@ void ACamera::UpdateViewTarget( FTViewTarget& OutVT, FLOAT DeltaTime )
 	static const FName NAME_FreeCamDefaultStyle( TEXT("FreeCam_Default") );
 	static const FName NAME_FirstPersonStyle( TEXT("FirstPerson") );
 	static const FName NAME_FixedStyle( TEXT("Fixed") );
-	if( CameraStyle == NAME_FirstPersonStyle )
+	if( CameraStyle == NAME_ThirdPersonStyle || CameraStyle == NAME_FreeCamStyle || CameraStyle == NAME_FreeCamDefaultStyle )
 	{
-		OutVT.Target->eventGetActorEyesViewPoint( OutVT.POV.Location, OutVT.POV.Rotation );
-	}
-	else if( CameraStyle == NAME_ThirdPersonStyle || CameraStyle == NAME_FreeCamStyle || CameraStyle == NAME_FreeCamDefaultStyle )
-	{
-		FVector Loc = OutVT.Target->Location;
-		FRotator Rot = OutVT.Target->Rotation;
-		if( CameraStyle == NAME_FreeCamStyle || CameraStyle == NAME_FreeCamDefaultStyle )
+		if( OutVT.Target )
 		{
-			Rot = PCOwner->Rotation;
+			FVector Loc = OutVT.Target->Location;
+			FRotator Rot = OutVT.Target->Rotation;
+			if( CameraStyle == NAME_FreeCamStyle || CameraStyle == NAME_FreeCamDefaultStyle )
+			{
+				Rot = PCOwner ? PCOwner->Rotation : Rot;
+			}
+			Loc += FRotationMatrix( Rot ).TransformNormal( FreeCamOffset );
+			const FVector Pos = Loc - Rot.Vector() * FreeCamDistance;
+			FCheckResult Hit( 1.f );
+			GWorld->SingleLineCheck( Hit, this, Pos, Loc, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision, FVector( 12.f, 12.f, 12.f ) );
+			OutVT.POV.Location = Hit.Actor ? Hit.Location : Pos;
+			OutVT.POV.Rotation = Rot;
 		}
-		Loc += FRotationMatrix( Rot ).TransformNormal( FreeCamOffset );
-		const FVector Pos = Loc - Rot.Vector() * FreeCamDistance;
-		FCheckResult Hit( 1.f );
-		GWorld->SingleLineCheck( Hit, this, Pos, Loc, TRACE_World | TRACE_StopAtAnyHit | TRACE_ComplexCollision, FVector( 12.f, 12.f, 12.f ) );
-		OutVT.POV.Location = Hit.Actor ? Hit.Location : Pos;
-		OutVT.POV.Rotation = Rot;
+		else if( PCOwner )
+		{
+			OutVT.POV.Location = PCOwner->Location;
+			OutVT.POV.Rotation = PCOwner->Rotation;
+		}
 	}
 	else if( CameraStyle == NAME_FixedStyle )
 	{
 		OutVT.POV = OrigPOV;
+	}
+	else
+	{
+		// Default / FirstPerson / any unhandled style (Dishonored custom camera): view through eyes or target transform
+		if( OutVT.Target )
+		{
+			OutVT.Target->eventGetActorEyesViewPoint( OutVT.POV.Location, OutVT.POV.Rotation );
+		}
+		else if( PCOwner )
+		{
+			OutVT.POV.Location = PCOwner->Location;
+			OutVT.POV.Rotation = PCOwner->Rotation;
+		}
 	}
 }
 
