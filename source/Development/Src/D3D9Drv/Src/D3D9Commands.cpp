@@ -73,7 +73,12 @@ void FD3D9DynamicRHI::SetRasterizerState(FRasterizerStateRHIParamRef NewStateRHI
 	// Add the global depth bias
 	extern FLOAT GDepthBiasOffset;
 	Direct3DDevice->SetRenderState(D3DRS_DEPTHBIAS,FLOAT_TO_DWORD(NewState->DepthBias + GDepthBiasOffset));
-	Direct3DDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,FLOAT_TO_DWORD(NewState->SlopeScaleDepthBias));
+	FLOAT SlopeScaleDepthBias = NewState->SlopeScaleDepthBias;
+	if (NewState->DepthBias < 0.0f && SlopeScaleDepthBias == 0.0f)
+	{
+		SlopeScaleDepthBias = -1.0f;
+	}
+	Direct3DDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,FLOAT_TO_DWORD(SlopeScaleDepthBias));
 }
 void FD3D9DynamicRHI::SetViewport(UINT MinX,UINT MinY,FLOAT MinZ,UINT MaxX,UINT MaxY,FLOAT MaxZ)
 {

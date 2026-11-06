@@ -180,7 +180,12 @@ void FD3D9DynamicRHI::SetRasterizerStateImmediate(const FRasterizerStateInitiali
 	// Add the global depth bias
 	extern FLOAT GDepthBiasOffset;
 	Direct3DDevice->SetRenderState(D3DRS_DEPTHBIAS,FLOAT_TO_DWORD(ImmediateState.DepthBias + GDepthBiasOffset));
-	Direct3DDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,FLOAT_TO_DWORD(ImmediateState.SlopeScaleDepthBias));
+	FLOAT SlopeScaleDepthBias = ImmediateState.SlopeScaleDepthBias;
+	if (ImmediateState.DepthBias < 0.0f && SlopeScaleDepthBias == 0.0f)
+	{
+		SlopeScaleDepthBias = -1.0f;
+	}
+	Direct3DDevice->SetRenderState(D3DRS_SLOPESCALEDEPTHBIAS,FLOAT_TO_DWORD(SlopeScaleDepthBias));
 	Direct3DDevice->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS,ImmediateState.bAllowMSAA);
 }
 
