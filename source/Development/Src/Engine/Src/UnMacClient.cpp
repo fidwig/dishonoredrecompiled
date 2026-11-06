@@ -389,10 +389,6 @@ static void appMacPumpCocoaEvents()
 
 - (BOOL)windowShouldClose:(NSWindow *)sender
 {
-	if (self.Viewport && self.Viewport->GetClient())
-	{
-		self.Viewport->GetClient()->CloseRequested(self.Viewport);
-	}
 	appRequestExit(0);
 	return YES;
 }
@@ -429,6 +425,7 @@ void FMacViewport::Destroy()
 	SetMouseCapture(FALSE);
 	CGAssociateMouseAndMouseCursorPosition(true);
 	MacUnhideCursor();
+	PressedKeys.Empty();
 
 	if( ViewportClient )
 	{
@@ -630,6 +627,7 @@ void FMacViewport::Resize(UINT NewSizeX, UINT NewSizeY, UBOOL NewFullscreen, INT
 			                                                   defer:NO];
 			[Window setTitle:@"Dishonored"];
 			[Window setAcceptsMouseMovedEvents:YES];
+			[Window setReleasedWhenClosed:NO];
 
 			if( InPosX < 0 && InPosY < 0 )
 			{
@@ -688,6 +686,20 @@ void UMacClient::StaticConstructor()
 {
 	UClass* TheClass = GetClass();
 	TheClass->EmitObjectReference( STRUCT_OFFSET( UMacClient, Engine ) );
+}
+
+void UMacClient::FinishDestroy()
+{
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		for (INT ViewportIndex = 0; ViewportIndex < Viewports.Num(); ViewportIndex++)
+		{
+			Viewports(ViewportIndex)->Destroy();
+			delete Viewports(ViewportIndex);
+		}
+		Viewports.Empty();
+	}
+	Super::FinishDestroy();
 }
 
 void UMacClient::Init(UEngine* InEngine)

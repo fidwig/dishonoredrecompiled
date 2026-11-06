@@ -88,6 +88,9 @@ class UMacClient : public UClient
 	UMacClient();
 	void StaticConstructor();
 
+	// UObject interface.
+	virtual void FinishDestroy();
+
 	// UClient interface.
 	virtual void Init(UEngine* InEngine);
 	virtual void Tick(FLOAT DeltaTime);
