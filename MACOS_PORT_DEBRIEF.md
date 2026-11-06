@@ -333,6 +333,18 @@ We are porting the reconstructed retail Dishonored (2013) engine (`dishonoredrec
     - Added process detection for Apple Metal compilers (`metal`, `metallib`, `air-lld`).
     - Added subsystem classification for `d9mt` Metal translation layer and `D3D9Drv`.
     - Specialized phase detection to distinguish intermediate static RHI archives (`libd9mt.a` / `libD3D9Drv.a`) from executable links (`DishonoredGame`).
+15. **Phase 3 Graphics Integration: `d9mt` Metal 4 Translation Layer & `D3D9Drv`**:
+    - Integrated `jdrly/d9mt` as a static library (`libd9mt.a`, 124 compilation units) translating Direct3D 9 to Apple Metal 4 with zero emulation.
+    - Added `cmake/d9mt.cmake` and enabled Direct3D 9 driver compilation under macOS (`_dishonored_d3d9_default ON`).
+    - Excluded non-shipping and editor-only units (`D3D9MeshUtils.cpp`, `D3D9ShaderCompiler.cpp`, `HardwareID.cpp`, `VideoDevice.cpp`).
+    - Guarded legacy x86 `__cpuid` intrinsics and DirectDraw legacy queries for Apple Silicon ARM64.
+    - Standardized Windows type definitions and shims in `Mac.h` and `windows_base.h` (`WPARAM`, `LPARAM`, `LRESULT`, `tagRECT`, `HRESULT`).
+    - Replaced Windows-only `DirectXMath` vector intrinsics in `D3D9Commands.cpp` with portable float4 vector constant expansion.
+    - Added POSIX `dlopen`/`dlsym`/`dlclose` dynamic library shims and `GParanoidDeviceLostChecking` in `DishonoredStubs.cpp`.
+    - Compiled `libD3D9Drv.a` and linked the full native ARM64 Mach-O executable [`Binaries/Mac/DishonoredGame`](file:///Users/jsph/Documents/dev/dmisc/dishonoredrecompiled/build/darwin-debug/Binaries/Mac/DishonoredGame) (107 MB).
+16. **Build Monitor v4 & Standalone Monitor (`monitor_build_v4.py`)**:
+    - Created `.build_monitoring/monitor_build_v4.py` featuring dual-rate EMA rate smoothing ($\alpha=0.08$), cumulative pace anchoring, historical target durations parsed from `.ninja_log`, and link duration floors (10s for executable, 4s for archives).
+    - Created `build_monitor_v4_standalone.py` / `.build_monitoring/build_monitor_v4_standalone.py` operating 100% independently of Antigravity/AGY tasks via direct `.ninja_log` streaming and process monitoring.
 
 ---
 
@@ -344,11 +356,16 @@ We are porting the reconstructed retail Dishonored (2013) engine (`dishonoredrec
 - Verified persistent world map load (`DishonoredGameFull_P.umap`).
 - Verified main engine tick loop running at ~250 FPS in Null-RHI mode.
 
-### Step 2: Phase 3 Graphics Backend (Direct3D 9 -> Apple Metal via `d9mt`) (NEXT)
-1. Vendor `https://github.com/jdrly/d9mt` into `external/d9mt`.
-2. Implement native macOS Cocoa windowing (`NSWindow` + `CAMetalLayer`) in `MacDrv`.
-3. Wire `D3D9Drv` to create the Direct3D 9 device backed by `d9mt`'s Metal translation layer.
-4. Render first triangle/viewport natively on macOS.
+### Step 2: Phase 3 Graphics Backend (`d9mt` Metal 4 & `D3D9Drv`) (COMPILED & LINKED ✔)
+- Built `libd9mt.a` Metal 4 Direct3D 9 translation layer (124 units).
+- Built `libD3D9Drv.a` native Direct3D 9 RHI driver.
+- Linked full native 107 MB ARM64 executable `DishonoredGame`.
+
+### Step 3: Native Cocoa Windowing & Metal Presentation (NEXT)
+1. Hook `NSWindow` and `CAMetalLayer` creation in `FMacViewport::Resize` in `UnMacClient.cpp`.
+2. Add macOS Cocoa message pump (`[NSApp nextEventMatchingMask:...]`) in `UMacClient::Tick`.
+3. Return `(void*)WindowHandle` in `FMacViewport::GetWindow()` for `d9mt` swapchain presentation.
+4. Boot `DishonoredGame` without `-nullrhi` and present first native frame on Apple Silicon!
 
 ---
 
