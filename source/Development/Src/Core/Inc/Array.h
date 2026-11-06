@@ -493,9 +493,10 @@ public:
 
 	~TArray()
 	{
-		checkSlow(ArrayNum>=0);
-		checkSlow(ArrayMax>=ArrayNum);
-		DestructItems(0,ArrayNum);
+		if( ArrayNum > 0 && ArrayMax >= ArrayNum )
+		{
+			DestructItems(0,ArrayNum);
+		}
 		ArrayNum = ArrayMax = 0;
 
 		#if defined(_MSC_VER)

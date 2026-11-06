@@ -33,6 +33,34 @@ static void MacUnhideCursor()
 	}
 }
 
+static bool MacIsMissionControlActive()
+{
+	CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+	if (!windowList) return false;
+	bool bActive = false;
+	CFIndex count = CFArrayGetCount(windowList);
+	for (CFIndex i = 0; i < count; i++)
+	{
+		CFDictionaryRef dict = (CFDictionaryRef)CFArrayGetValueAtIndex(windowList, i);
+		CFStringRef owner = (CFStringRef)CFDictionaryGetValue(dict, kCGWindowOwnerName);
+		if (owner && CFStringCompare(owner, CFSTR("Dock"), 0) == kCFCompareEqualTo)
+		{
+			CFDictionaryRef bounds = (CFDictionaryRef)CFDictionaryGetValue(dict, kCGWindowBounds);
+			if (bounds)
+			{
+				CGRect rect;
+				if (CGRectMakeWithDictionaryRepresentation(bounds, &rect) && rect.origin.y == -1.0)
+				{
+					bActive = true;
+					break;
+				}
+			}
+		}
+	}
+	CFRelease(windowList);
+	return bActive;
+}
+
 static FName MacKeyCodeToFName(unsigned short KeyCode)
 {
 	switch (KeyCode)
@@ -198,10 +226,8 @@ static void appMacPumpCocoaEvents()
 {
 	if (!self.Viewport) return;
 	[[self window] makeFirstResponder:self];
-	if (!self.Viewport->bCapturingMouseInput)
-	{
-		self.Viewport->SetMouseCapture(TRUE);
-	}
+	[[self window] makeKeyAndOrderFront:nil];
+	self.Viewport->SetMouseCapture(TRUE);
 	self.Viewport->InputKey(KEY_LeftMouseButton, IE_Pressed);
 }
 
@@ -215,10 +241,8 @@ static void appMacPumpCocoaEvents()
 {
 	if (!self.Viewport) return;
 	[[self window] makeFirstResponder:self];
-	if (!self.Viewport->bCapturingMouseInput)
-	{
-		self.Viewport->SetMouseCapture(TRUE);
-	}
+	[[self window] makeKeyAndOrderFront:nil];
+	self.Viewport->SetMouseCapture(TRUE);
 	self.Viewport->InputKey(KEY_RightMouseButton, IE_Pressed);
 }
 
@@ -267,16 +291,6 @@ static void appMacPumpCocoaEvents()
 - (void)handleMouseMotion:(NSEvent *)event
 {
 	if (!self.Viewport) return;
-
-	if (self.Viewport->bCapturingMouseInput)
-	{
-		NSWindow* win = [self window];
-		if (win && ![win isKeyWindow] && ![win isMainWindow])
-		{
-			self.Viewport->OnWindowLostFocus();
-			return;
-		}
-	}
 
 	CGFloat dx = [event deltaX];
 	CGFloat dy = [event deltaY];
@@ -628,21 +642,19 @@ void FMacViewport::ShowCursor(UBOOL bVisible)
 
 void FMacViewport::SetMouseCapture(UBOOL bCapture)
 {
-	if (bCapturingMouseInput != bCapture)
+	bCapturingMouseInput = bCapture;
+	if (bCapture)
 	{
-		bCapturingMouseInput = bCapture;
-		if (bCapture && bIsFocused)
-		{
-			CGAssociateMouseAndMouseCursorPosition(false);
-			MacHideCursor();
-			bCursorVisible = FALSE;
-		}
-		else
-		{
-			CGAssociateMouseAndMouseCursorPosition(true);
-			MacUnhideCursor();
-			bCursorVisible = TRUE;
-		}
+		bIsFocused = TRUE;
+		CGAssociateMouseAndMouseCursorPosition(false);
+		MacHideCursor();
+		bCursorVisible = FALSE;
+	}
+	else
+	{
+		CGAssociateMouseAndMouseCursorPosition(true);
+		MacUnhideCursor();
+		bCursorVisible = TRUE;
 	}
 }
 
@@ -692,7 +704,7 @@ void FMacViewport::OnWindowReceivedFocus()
 
 void FMacViewport::DispatchMouseInput(FLOAT DeltaTime)
 {
-	if (bCapturingMouseInput && bIsFocused && GetClient())
+	if (bCapturingMouseInput && GetClient())
 	{
 		if (AccumulatedMouseDeltaX != 0.0f)
 		{
@@ -701,7 +713,7 @@ void FMacViewport::DispatchMouseInput(FLOAT DeltaTime)
 		}
 		if (AccumulatedMouseDeltaY != 0.0f)
 		{
-			GetClient()->InputAxis(this, 0, KEY_MouseY, AccumulatedMouseDeltaY, DeltaTime, FALSE);
+			GetClient()->InputAxis(this, 0, KEY_MouseY, -AccumulatedMouseDeltaY, DeltaTime, FALSE);
 			AccumulatedMouseDeltaY = 0.0f;
 		}
 	}
@@ -821,8 +833,7 @@ void UMacClient::Tick(FLOAT DeltaTime)
 		FMacViewport* VP = Viewports(ViewportIndex);
 		if (VP && VP->bCapturingMouseInput)
 		{
-			NSWindow* Window = (__bridge NSWindow*)VP->WindowHandle;
-			if (Window && ![Window isKeyWindow] && ![Window isMainWindow])
+			if (MacIsMissionControlActive())
 			{
 				VP->OnWindowLostFocus();
 			}
