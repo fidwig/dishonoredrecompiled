@@ -2,6 +2,10 @@
 # D3D9Drv_EXCLUDE: reference compile units left out of the module target (tests, tools).
 # D3D9Drv_NOT_IN_PDB: compiled, but the Shipping PDB attributes no function to them; verify in P2.7.
 set(D3D9Drv_EXCLUDE
+  Src/D3D9MeshUtils.cpp
+  Src/D3D9ShaderCompiler.cpp
+  Src/HardwareID.cpp
+  Src/VideoDevice.cpp
 )
 set(D3D9Drv_NOT_IN_PDB
   Src/D3D9Drv.cpp
