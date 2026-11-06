@@ -107,7 +107,7 @@ void FMacViewport::Resize(UINT NewSizeX, UINT NewSizeY, UBOOL NewFullscreen, INT
 			FMacContentView* ContentView = [[FMacContentView alloc] initWithFrame:FrameRect];
 			[ContentView setWantsLayer:YES];
 			CAMetalLayer* MetalLayer = [CAMetalLayer layer];
-			[MetalLayer setGeometryFlipped:YES];
+			[MetalLayer setTransform:CATransform3DMakeScale(1.0, -1.0, 1.0)];
 			[ContentView setLayer:MetalLayer];
 			[Window setContentView:ContentView];
 
