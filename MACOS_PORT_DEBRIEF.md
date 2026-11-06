@@ -59,6 +59,19 @@ We are porting the reconstructed retail Dishonored (2013) engine (`dishonoredrec
 
 ---
 
+13. **Phase 3 Graphics Integration: Native Metal 4 Rendering Milestone Achieved**:
+    - Built and integrated `d9mt` (Direct3D 9 to Apple Metal 4 translation layer) with Apple Silicon ARM64 optimizations.
+    - Implemented native Cocoa windowing in `source/Development/Src/Engine/Src/UnMacClient.cpp` using `NSWindow` and `CAMetalLayer` with guarded CarbonCore headers to prevent symbol collision with UE3's `FVector`.
+    - Solved `__wine_unix_call_funcs` symbol collision between `d9mt` bridge (`winemetal_unix.c`) and `airlib/unix.cpp` via compiler definition remapping (`-D__wine_unix_call_funcs=d9mtair_private_call_funcs`).
+    - Linked complete bridge translation units (`cache.c`, `dxso_stubs.c`, `air_cache_lineage.c`, `libsqlite3`, and `d9mt_air_codegen_id`).
+    - Added fallback defaults for missing `[TextureStreaming]` INI properties in `UnContentStreaming.cpp`.
+    - **Live Execution Result**:
+      - Dishonored retail executable (`Binaries/Mac/DishonoredGame`) booted cleanly to retail map `DishonoredGameFull_P.umap`.
+      - Initialized 63,496 root objects, 2,210 Metal textures, 15,400 uploaded mip levels, real-time background package streaming from TFC, 523–685 draw calls per frame, DisFog, Bloom, AA, and DOF post-processing.
+      - **Over 3,000 continuous native frames rendered** at 1920x1080 resolution at ~50–60 FPS natively on Apple Silicon with zero emulation.
+
+---
+
 ## 2. Complete Inventory of Changes & Files
 
 ### A. Platform Foundation Files (Created in Earlier Sessions)
