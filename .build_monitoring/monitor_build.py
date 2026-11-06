@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # /btw can you give me a script i can play in another terminal window so i can monitor the current build progress with like a progress bar
 #  and maybe the last few compiled file names and what step is currently being done, and it would have to show any active task like when
 #  this build is done, it will show it as done but once another build starts it shows this one without me having to restart the script?
@@ -11,7 +13,6 @@
 
 ### monitor_build.py
 
-#!/usr/bin/env python3
 """
 Antigravity & Ninja Real-Time Build Monitor
 Run in any terminal window:
