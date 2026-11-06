@@ -8847,7 +8847,7 @@ public:
 	 */
 	virtual void Tick(FLOAT)
 	{
-		check(0 && "Must be overridden");
+		// DISHONORED(port): Empty body when running without concrete OSS (avoids crash when unported OSS is instantiated)
 	}
 
 	/**
