@@ -2832,6 +2832,23 @@ void UFunction::Bind()
 		Func = FindNative(OwnerClass->GetFName(), Proc);
 		if( Func == NULL )
 		{
+			// DISHONORED(port): If a subclass inherits or overrides a native function whose body is defined
+			// on an ancestor class (e.g. DishonoredPlayerController inheriting APlayerController::execProcessViewRotation),
+			// search up the class hierarchy.
+			UClass* SuperClass = OwnerClass->GetSuperClass();
+			while( Func == NULL && SuperClass != NULL )
+			{
+				ANSICHAR SuperProc[MAX_SPRINTF];
+				appStrcpyANSI(SuperProc, TCHAR_TO_ANSI(SuperClass->GetPrefixCPP()));
+				appStrcatANSI(SuperProc, TCHAR_TO_ANSI(*SuperClass->GetName()));
+				appStrcatANSI(SuperProc, "exec");
+				appStrcatANSI(SuperProc, TCHAR_TO_ANSI(*GetName()));
+				Func = FindNative(SuperClass->GetFName(), SuperProc);
+				SuperClass = SuperClass->GetSuperClass();
+			}
+		}
+		if( Func == NULL )
+		{
 			// DISHONORED(bringup): 147 Core/Engine/GameFramework natives of the retail scripts have no C++ body yet (agent Z);
 			// a NULL Func would jump to address 0 on the first call. The stub consumes the parameters and warns once.
 			Func = &UObject::execDishonoredUnboundNative;

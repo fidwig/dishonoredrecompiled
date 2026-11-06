@@ -299,13 +299,29 @@ static void appMacPumpCocoaEvents()
 {
 	if (!self.Viewport) return;
 
-	if (([event modifierFlags] & NSEventModifierFlagCommand) != 0)
+	NSEventModifierFlags flags = [event modifierFlags];
+	unsigned short kc = [event keyCode];
+
+	// Handle Cmd+Q cleanly to quit
+	if ((flags & NSEventModifierFlagCommand) != 0)
+	{
+		if ([[event charactersIgnoringModifiers] isEqualToString:@"q"])
+		{
+			appRequestExit(0);
+			return;
+		}
+		[super keyDown:event];
+		return;
+	}
+
+	// If Option/Alt or Control is held with Tab (e.g. window switcher), let the OS / switcher handle it
+	if ((flags & (NSEventModifierFlagOption | NSEventModifierFlagControl)) != 0 && kc == 0x30)
 	{
 		[super keyDown:event];
 		return;
 	}
 
-	FName keyName = MacKeyCodeToFName([event keyCode]);
+	FName keyName = MacKeyCodeToFName(kc);
 	if (keyName != NAME_None)
 	{
 		if (keyName == KEY_Escape && self.Viewport->bCapturingMouseInput)
@@ -371,8 +387,45 @@ static void appMacPumpCocoaEvents()
 @end
 
 @implementation FMacWindowDelegate
+- (instancetype)init
+{
+	self = [super init];
+	if (self)
+	{
+		[[NSNotificationCenter defaultCenter] addObserver:self
+		                                         selector:@selector(appDidResignActive:)
+		                                             name:NSApplicationDidResignActiveNotification
+		                                           object:nil];
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+- (void)appDidResignActive:(NSNotification *)notification
+{
+	debugf(TEXT("Cocoa: appDidResignActive - releasing mouse and focus"));
+	if (self.Viewport)
+	{
+		self.Viewport->OnWindowLostFocus();
+	}
+}
+
 - (void)windowDidResignKey:(NSNotification *)notification
 {
+	debugf(TEXT("Cocoa: windowDidResignKey - releasing mouse and focus"));
+	if (self.Viewport)
+	{
+		self.Viewport->OnWindowLostFocus();
+	}
+}
+
+- (void)windowDidResignMain:(NSNotification *)notification
+{
+	debugf(TEXT("Cocoa: windowDidResignMain - releasing mouse and focus"));
 	if (self.Viewport)
 	{
 		self.Viewport->OnWindowLostFocus();
@@ -381,6 +434,7 @@ static void appMacPumpCocoaEvents()
 
 - (void)windowDidBecomeKey:(NSNotification *)notification
 {
+	debugf(TEXT("Cocoa: windowDidBecomeKey - received focus"));
 	if (self.Viewport)
 	{
 		self.Viewport->OnWindowReceivedFocus();
@@ -389,6 +443,7 @@ static void appMacPumpCocoaEvents()
 
 - (BOOL)windowShouldClose:(NSWindow *)sender
 {
+	debugf(TEXT("Cocoa: windowShouldClose received, exiting"));
 	appRequestExit(0);
 	return YES;
 }
@@ -549,6 +604,8 @@ void FMacViewport::SetMouseCapture(UBOOL bCapture)
 void FMacViewport::OnWindowLostFocus()
 {
 	bIsFocused = FALSE;
+	bCapturingMouseInput = FALSE;
+
 	// Release mouse capture immediately when out of focus!
 	CGAssociateMouseAndMouseCursorPosition(true);
 	MacUnhideCursor();
@@ -599,7 +656,7 @@ void FMacViewport::DispatchMouseInput(FLOAT DeltaTime)
 		}
 		if (AccumulatedMouseDeltaY != 0.0f)
 		{
-			GetClient()->InputAxis(this, 0, KEY_MouseY, -AccumulatedMouseDeltaY, DeltaTime, FALSE);
+			GetClient()->InputAxis(this, 0, KEY_MouseY, AccumulatedMouseDeltaY, DeltaTime, FALSE);
 			AccumulatedMouseDeltaY = 0.0f;
 		}
 	}
@@ -628,6 +685,9 @@ void FMacViewport::Resize(UINT NewSizeX, UINT NewSizeY, UBOOL NewFullscreen, INT
 			[Window setTitle:@"Dishonored"];
 			[Window setAcceptsMouseMovedEvents:YES];
 			[Window setReleasedWhenClosed:NO];
+			[Window setHidesOnDeactivate:NO];
+			[Window setCanHide:NO];
+			[Window setCollectionBehavior:NSWindowCollectionBehaviorDefault | NSWindowCollectionBehaviorParticipatesInCycle | NSWindowCollectionBehaviorManaged];
 
 			if( InPosX < 0 && InPosY < 0 )
 			{
