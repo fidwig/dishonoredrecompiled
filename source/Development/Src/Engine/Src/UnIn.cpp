@@ -667,9 +667,122 @@ void UInput::ResetInput()
 	UPlayerInput
 ========================================================================================================== */
 
+static void AddBindingSetToBindings( TArrayNoInit<FKeyBind>& Bindings, const TArrayNoInit<FKeyBind>& Set )
+{
+	for( INT i = 0; i < Set.Num(); ++i )
+	{
+		const FKeyBind& New = Set( i );
+		UBOOL bHandled = FALSE;
+		for( INT j = 0; j < Bindings.Num(); ++j )
+		{
+			FKeyBind& Bind = Bindings( j );
+			if( Bind.Name != New.Name )
+			{
+				continue;
+			}
+			if( Bind.Control == New.Control && Bind.Shift == New.Shift && Bind.Alt == New.Alt &&
+				Bind.m_bLMouseHeld == New.m_bLMouseHeld && Bind.m_bRMouseHeld == New.m_bRMouseHeld )
+			{
+				Bind.Command += TEXT("|");
+				Bind.Command += New.Command;
+				bHandled = TRUE;
+				break;
+			}
+			const UBOOL bNewCovers =
+				( New.Control || !Bind.Control ) && ( New.Shift || !Bind.Shift ) && ( New.Alt || !Bind.Alt ) &&
+				( New.m_bLMouseHeld || !Bind.m_bLMouseHeld ) && ( New.m_bRMouseHeld || !Bind.m_bRMouseHeld );
+			if( bNewCovers )
+			{
+				Bind = New;
+				bHandled = TRUE;
+				break;
+			}
+		}
+		if( !bHandled )
+		{
+			Bindings.AddItem( New );
+		}
+	}
+}
+
+static void PopulatePlayerInputBindings( UPlayerInput* Input )
+{
+	if( !Input )
+	{
+		return;
+	}
+
+	if( Input->Bindings.Num() == 0 )
+	{
+		if( Input->BaseBindings.Num() > 0 )
+		{
+			Input->Bindings = Input->BaseBindings;
+			AddBindingSetToBindings( Input->Bindings, Input->m_PCBindings );
+			AddBindingSetToBindings( Input->Bindings, Input->m_PadBindingSet1 );
+		}
+
+		// Ensure essential mouse look, WASD flight, and modifier bindings are present
+		struct FSimpleBind { const TCHAR* Name; const TCHAR* Command; };
+		static const FSimpleBind Fallbacks[] = {
+			{ TEXT("MouseX"), TEXT("Count bXAxis | Axis aMouseX") },
+			{ TEXT("MouseY"), TEXT("Count bYAxis | Axis aMouseY") },
+			{ TEXT("W"), TEXT("GBA_MoveForward | Axis aBaseY Speed=1.0") },
+			{ TEXT("S"), TEXT("GBA_MoveBackward | Axis aBaseY Speed=-1.0") },
+			{ TEXT("A"), TEXT("GBA_StrafeLeft | Axis aStrafe Speed=-1.0") },
+			{ TEXT("D"), TEXT("GBA_StrafeRight | Axis aStrafe Speed=+1.0") },
+			{ TEXT("SpaceBar"), TEXT("GBA_Jump | Axis aUp Speed=1.0") },
+			{ TEXT("C"), TEXT("GBA_Sneak | Axis aUp Speed=-1.0") },
+			{ TEXT("LeftShift"), TEXT("GBA_Sprint | Button bRun") },
+			{ TEXT("GBA_MoveForward"), TEXT("Axis aBaseY Speed=1.0") },
+			{ TEXT("GBA_MoveBackward"), TEXT("Axis aBaseY Speed=-1.0") },
+			{ TEXT("GBA_StrafeLeft"), TEXT("Axis aStrafe Speed=-1.0") },
+			{ TEXT("GBA_StrafeRight"), TEXT("Axis aStrafe Speed=+1.0") },
+			{ TEXT("GBA_Jump"), TEXT("Axis aUp Speed=1.0") },
+			{ TEXT("GBA_Sneak"), TEXT("Axis aUp Speed=-1.0") },
+			{ TEXT("GBA_Sprint"), TEXT("Button bRun") },
+		};
+
+		for( INT i = 0; i < ARRAY_COUNT(Fallbacks); ++i )
+		{
+			FName KeyName( Fallbacks[i].Name, FNAME_Find );
+			if( KeyName == NAME_None )
+			{
+				KeyName = FName( Fallbacks[i].Name );
+			}
+			UBOOL bFound = FALSE;
+			for( INT j = 0; j < Input->Bindings.Num(); ++j )
+			{
+				if( Input->Bindings(j).Name == KeyName )
+				{
+					bFound = TRUE;
+					break;
+				}
+			}
+			if( !bFound )
+			{
+				FKeyBind NewBind;
+				NewBind.Name = KeyName;
+				NewBind.Command = Fallbacks[i].Command;
+				Input->Bindings.AddItem( NewBind );
+			}
+		}
+
+		debugf( TEXT("DISHONORED(bringup): PlayerInput bindings built: %d total (base=%d, pc=%d)"),
+			Input->Bindings.Num(), Input->BaseBindings.Num(), Input->m_PCBindings.Num() );
+	}
+
+	if( Input->MoveForwardSpeed <= 0.0f ) Input->MoveForwardSpeed = 1200.0f;
+	if( Input->MoveStrafeSpeed <= 0.0f ) Input->MoveStrafeSpeed = 1200.0f;
+	if( Input->LookRightScale == 0.0f ) Input->LookRightScale = 300.0f;
+	if( Input->LookUpScale == 0.0f ) Input->LookUpScale = -250.0f;
+	if( Input->MouseSensitivity <= 0.0f ) Input->MouseSensitivity = 30.0f;
+}
+
 void UPlayerInput::InitInputSystem()
 {
 	ResetInput();
+
+	PopulatePlayerInputBindings( this );
 
 	if (GWorld && GWorld->GetGameSequence())
 	{
@@ -991,6 +1104,11 @@ UBOOL UPlayerInput::InputTouch(INT ControllerId, UINT Handle, ETouchType Type, F
 // aTurn_BeforeClear / aLookUp_BeforeClear saved before the look clear. Retail has no PostProcessInput and no ProcessInputMatching.
 void UPlayerInput::PlayerInput( FLOAT DeltaTime )
 {
+	if( Bindings.Num() == 0 )
+	{
+		PopulatePlayerInputBindings( this );
+	}
+
 	APlayerController* PC = GetOuterAPlayerController();
 
 	RawJoyUp = aBaseY;

@@ -261,6 +261,16 @@ static void appMacPumpCocoaEvents()
 {
 	if (!self.Viewport) return;
 
+	if (self.Viewport->bCapturingMouseInput)
+	{
+		NSWindow* win = [self window];
+		if (win && (![win isKeyWindow] || ![NSApp isActive]))
+		{
+			self.Viewport->OnWindowLostFocus();
+			return;
+		}
+	}
+
 	CGFloat dx = [event deltaX];
 	CGFloat dy = [event deltaY];
 
@@ -396,6 +406,10 @@ static void appMacPumpCocoaEvents()
 		                                         selector:@selector(appDidResignActive:)
 		                                             name:NSApplicationDidResignActiveNotification
 		                                           object:nil];
+		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+		                                                       selector:@selector(spaceChanged:)
+		                                                           name:NSWorkspaceActiveSpaceDidChangeNotification
+		                                                         object:nil];
 	}
 	return self;
 }
@@ -403,6 +417,29 @@ static void appMacPumpCocoaEvents()
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
+}
+
+- (void)spaceChanged:(NSNotification *)notification
+{
+	debugf(TEXT("Cocoa: spaceChanged - releasing mouse and focus"));
+	if (self.Viewport)
+	{
+		self.Viewport->OnWindowLostFocus();
+	}
+}
+
+- (void)windowDidChangeOcclusionState:(NSNotification *)notification
+{
+	NSWindow* win = (NSWindow*)[notification object];
+	if (win && !([win occlusionState] & NSWindowOcclusionStateVisible))
+	{
+		debugf(TEXT("Cocoa: windowDidChangeOcclusionState occluded - releasing mouse and focus"));
+		if (self.Viewport)
+		{
+			self.Viewport->OnWindowLostFocus();
+		}
+	}
 }
 
 - (void)appDidResignActive:(NSNotification *)notification
@@ -773,7 +810,16 @@ void UMacClient::Tick(FLOAT DeltaTime)
 	appMacPumpCocoaEvents();
 	for (INT ViewportIndex = 0; ViewportIndex < Viewports.Num(); ViewportIndex++)
 	{
-		Viewports(ViewportIndex)->DispatchMouseInput(DeltaTime);
+		FMacViewport* VP = Viewports(ViewportIndex);
+		if (VP && VP->bCapturingMouseInput)
+		{
+			NSWindow* Window = (__bridge NSWindow*)VP->WindowHandle;
+			if (Window && (![Window isKeyWindow] || ![NSApp isActive]))
+			{
+				VP->OnWindowLostFocus();
+			}
+		}
+		VP->DispatchMouseInput(DeltaTime);
 	}
 }
 

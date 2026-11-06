@@ -1248,20 +1248,46 @@ static void DishonoredPlayerTick( APlayerController* PC, FLOAT DeltaTime )
 	struct { FLOAT DeltaTime; } MoveParms;
 	MoveParms.DeltaTime = DeltaTime;
 	DishonoredRaiseEvent( PC, TEXT("PlayerMove"), &MoveParms );
-	if( !PC->Pawn && PC->PlayerInput )
+
+	if( PC->PlayerInput )
 	{
-		// Free spectator camera movement when no pawn is spawned (e.g. bring-up exploration):
-		const FLOAT Forward = PC->PlayerInput->aForward;
-		const FLOAT Strafe = PC->PlayerInput->aStrafe;
-		const FLOAT Up = PC->PlayerInput->aUp;
-		if( Forward != 0.0f || Strafe != 0.0f || Up != 0.0f )
+		if( PC->Pawn )
 		{
-			const FRotationMatrix CamMatrix( PC->Rotation );
-			FVector MoveDir = CamMatrix.GetAxis( 0 ) * Forward + CamMatrix.GetAxis( 1 ) * Strafe + FVector( 0.f, 0.f, 1.f ) * Up;
-			if( !MoveDir.IsZero() )
+			PC->PlayerMove_Walking( DeltaTime );
+
+			// Free spectator flight / vertical flight / unsticking if holding Shift (boost), Space/C (up/down), or pawn walking physics not active:
+			const FLOAT Forward = PC->PlayerInput->aForward;
+			const FLOAT Strafe = PC->PlayerInput->aStrafe;
+			const FLOAT Up = PC->PlayerInput->aUp;
+			if( (PC->bRun != 0) || Up != 0.0f || PC->Pawn->Physics != PHYS_Walking || (PC->Pawn->Acceleration.IsZero() && (Forward != 0.0f || Strafe != 0.0f)) )
 			{
-				const FLOAT Speed = (PC->bRun != 0) ? 2500.0f : 800.0f;
-				PC->Location += MoveDir.SafeNormal() * (Speed * DeltaTime);
+				const FRotationMatrix CamMatrix( PC->Rotation );
+				FVector MoveDir = CamMatrix.GetAxis( 0 ) * Forward + CamMatrix.GetAxis( 1 ) * Strafe + FVector( 0.f, 0.f, 1.f ) * Up;
+				if( !MoveDir.IsZero() )
+				{
+					const FLOAT Speed = (PC->bRun != 0) ? 2500.0f : 800.0f;
+					PC->Pawn->Location += MoveDir.SafeNormal() * (Speed * DeltaTime);
+					PC->Location = PC->Pawn->Location;
+				}
+			}
+		}
+		else
+		{
+			PC->UpdateRotation( DeltaTime );
+
+			// Free spectator camera movement when no pawn is spawned (e.g. bring-up exploration):
+			const FLOAT Forward = PC->PlayerInput->aForward;
+			const FLOAT Strafe = PC->PlayerInput->aStrafe;
+			const FLOAT Up = PC->PlayerInput->aUp;
+			if( Forward != 0.0f || Strafe != 0.0f || Up != 0.0f )
+			{
+				const FRotationMatrix CamMatrix( PC->Rotation );
+				FVector MoveDir = CamMatrix.GetAxis( 0 ) * Forward + CamMatrix.GetAxis( 1 ) * Strafe + FVector( 0.f, 0.f, 1.f ) * Up;
+				if( !MoveDir.IsZero() )
+				{
+					const FLOAT Speed = (PC->bRun != 0) ? 2500.0f : 800.0f;
+					PC->Location += MoveDir.SafeNormal() * (Speed * DeltaTime);
+				}
 			}
 		}
 	}
