@@ -185,6 +185,12 @@ void* appGetDllExport( void* DllHandle, const TCHAR* ProcName )
 	return dlsym(DllHandle, TCHAR_TO_ANSI(ProcName));
 }
 
+// d9mt Metal bridge symbols for native non-Wine macOS execution
+extern "C" {
+int NtSetEvent(void* handle, void* prev_state) { return 0; }
+extern const char d9mt_air_codegen_id[] = "D9MT-AIR-CODEGEN-ID 38243f7b8e00a9493710fa1072a108c393acbcb2d4f7b74f6e6a681f3bb54a93";
+}
+
 // ---- Link anchors for static-library objects nothing references -----------------------------
 // UBT links the modules as static libraries too, but every stat group / registrant global lives in
 // an object that also exports something referenced, except this one: Core/Src/BestFitAllocator.cpp

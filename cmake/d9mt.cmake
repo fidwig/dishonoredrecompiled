@@ -49,7 +49,10 @@ set(D9MT_SOURCES
 
   # Bridge (winemetal & d9mtair)
   ${D9MT_ROOT}/bridge/unix/winemetal_unix.c
+  ${D9MT_ROOT}/bridge/unix/cache.c
+  ${D9MT_ROOT}/bridge/unix/dxso_stubs.c
   ${D9MT_ROOT}/bridge/unix/air_cache.c
+  ${D9MT_ROOT}/bridge/unix/air_cache_lineage.c
   ${D9MT_ROOT}/bridge/winemetal_thunks.c
   ${D9MT_ROOT}/bridge/d9mtair_thunks.c
 
@@ -145,6 +148,7 @@ set(D9MT_SOURCES
 set_source_files_properties(
   ${D9MT_ROOT}/bridge/unix/winemetal_unix.c
   ${D9MT_ROOT}/bridge/unix/air_cache.c
+  ${D9MT_ROOT}/bridge/unix/cache.c
   PROPERTIES COMPILE_FLAGS "-x objective-c"
 )
 
@@ -180,12 +184,20 @@ target_compile_definitions(d9mt PRIVATE
 
 target_link_libraries(d9mt PUBLIC
   /opt/homebrew/Cellar/llvm@15/15.0.7/lib/libLLVM.dylib
+  sqlite3
   "-framework Metal"
   "-framework MetalFX"
   "-framework Foundation"
   "-framework QuartzCore"
   "-framework Cocoa"
   "-framework ColorSync"
+)
+
+# Rename airlib's __wine_unix_call_funcs so winemetal_unix.c's master table is used
+set_source_files_properties(
+  ${D9MT_ROOT}/airlib/unix.cpp
+  PROPERTIES
+  COMPILE_DEFINITIONS "__wine_unix_call_funcs=d9mtair_private_call_funcs;__wine_unix_call_wow64_funcs=d9mtair_private_wow64_funcs"
 )
 
 # Dishonored::DirectX9 interface library providing headers and linking d9mt
