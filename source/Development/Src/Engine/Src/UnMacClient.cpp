@@ -31,6 +31,16 @@ static void appMacPumpCocoaEvents()
 	}
 }
 
+@interface FMacContentView : NSView
+@end
+
+@implementation FMacContentView
+- (BOOL)isFlipped
+{
+	return YES;
+}
+@end
+
 /*-----------------------------------------------------------------------------
 	FMacViewport
 -----------------------------------------------------------------------------*/
@@ -94,8 +104,12 @@ void FMacViewport::Resize(UINT NewSizeX, UINT NewSizeY, UBOOL NewFullscreen, INT
 				[Window center];
 			}
 
-			NSView* ContentView = [Window contentView];
+			FMacContentView* ContentView = [[FMacContentView alloc] initWithFrame:FrameRect];
 			[ContentView setWantsLayer:YES];
+			CAMetalLayer* MetalLayer = [CAMetalLayer layer];
+			[MetalLayer setGeometryFlipped:YES];
+			[ContentView setLayer:MetalLayer];
+			[Window setContentView:ContentView];
 
 			[Window makeKeyAndOrderFront:nil];
 			[NSApp activateIgnoringOtherApps:YES];
