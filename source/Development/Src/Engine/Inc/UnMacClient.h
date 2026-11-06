@@ -20,6 +20,16 @@ public:
 	UMacClient* Client;
 	FString Name;
 	void* WindowHandle;
+	void* WindowDelegate;
+
+	UBOOL bCapturingMouseInput;
+	UBOOL bCursorVisible;
+	UBOOL bIsFocused;
+	FLOAT AccumulatedMouseDeltaX;
+	FLOAT AccumulatedMouseDeltaY;
+	INT MousePositionX;
+	INT MousePositionY;
+	TArray<FName> PressedKeys;
 
 	FMacViewport(UMacClient* InClient, FViewportClient* InViewportClient, const TCHAR* InName, UINT InSizeX, UINT InSizeY, UBOOL InFullscreen);
 	virtual ~FMacViewport();
@@ -34,13 +44,32 @@ public:
 	virtual void* GetWindow() { return WindowHandle; }
 	virtual FViewportFrame* GetViewportFrame() { return this; }
 	virtual UBOOL CaptureJoystickInput(UBOOL Capture) { return TRUE; }
-	virtual UBOOL KeyState(FName Key) const { return FALSE; }
-	virtual INT GetMouseX() { return 0; }
-	virtual INT GetMouseY() { return 0; }
-	virtual void GetMousePos( FIntPoint& MousePosition ) { MousePosition = FIntPoint(0, 0); }
-	virtual void SetMouse(INT x, INT y) {}
-	virtual void ProcessInput( FLOAT DeltaTime ) {}
+	virtual UBOOL KeyState(FName Key) const;
+	virtual INT GetMouseX() { return MousePositionX; }
+	virtual INT GetMouseY() { return MousePositionY; }
+	virtual void GetMousePos( FIntPoint& MousePosition ) { MousePosition = FIntPoint(MousePositionX, MousePositionY); }
+	virtual void SetMouse(INT x, INT y);
+	virtual void ProcessInput( FLOAT DeltaTime );
 	virtual void InvalidateDisplay() {}
+
+	// Mouse capture and focus interface
+	virtual UBOOL HasMouseCapture() const { return bCapturingMouseInput; }
+	virtual UBOOL HasFocus() const { return bIsFocused; }
+	virtual UBOOL IsForegroundWindow() const { return bIsFocused; }
+	virtual void CaptureMouse( UBOOL bCapture );
+	virtual void LockMouseToWindow( UBOOL bLock );
+	virtual void ShowCursor( UBOOL bVisible );
+	virtual UBOOL IsCursorVisible() const { return bCursorVisible; }
+
+	void SetMouseCapture( UBOOL bCapture );
+	void OnWindowLostFocus();
+	void OnWindowReceivedFocus();
+	void DispatchMouseInput( FLOAT DeltaTime );
+
+	// Input forwarding helpers
+	void InputKey(FName Key, EInputEvent Event, FLOAT AmountDepressed = 1.0f);
+	void InputChar(TCHAR Character);
+	void MouseMove(INT X, INT Y);
 };
 
 /**
