@@ -23,6 +23,15 @@ UBOOL FD3D9DynamicRHI::GetOcclusionQueryResult(FOcclusionQueryRHIParamRef Occlus
 {
 	DYNAMIC_CAST_D3D9RESOURCE(OcclusionQuery,OcclusionQuery);
 
+#if PLATFORM_MACOSX
+	extern UBOOL GIgnoreAllOcclusionQueries;
+	if (GIgnoreAllOcclusionQueries)
+	{
+		OutNumPixels = 1000;
+		return TRUE;
+	}
+#endif
+
 	UBOOL bSuccess = TRUE;
 	if(!OcclusionQuery->bResultIsCached)
 	{

@@ -1,4 +1,4 @@
-﻿/*=============================================================================
+/*=============================================================================
 	LaunchEngineLoop.cpp: Main engine loop.
 	Copyright 1998-2013 Epic Games, Inc. All Rights Reserved.
 =============================================================================*/
@@ -3653,6 +3653,24 @@ INT FEngineLoop::Init()
 	if( ParseParam( appCmdLine(), TEXT( "NoTextureStreaming" ) ) )
 	{
 		GUseTextureStreaming = FALSE;
+	}
+
+#if PLATFORM_MACOSX
+	// On Apple Silicon TBDR / Metal via d9mt, latent occlusion queries cause mesh flickering
+	// and CPU-GPU synchronization stalls. Hardware HSR handles hidden surface removal.
+	extern UBOOL GIgnoreAllOcclusionQueries;
+	GIgnoreAllOcclusionQueries = TRUE;
+#endif
+
+	if( ParseParam( appCmdLine(), TEXT("noocclusion") ) )
+	{
+		extern UBOOL GIgnoreAllOcclusionQueries;
+		GIgnoreAllOcclusionQueries = TRUE;
+	}
+	else if( ParseParam( appCmdLine(), TEXT("occlusion") ) )
+	{
+		extern UBOOL GIgnoreAllOcclusionQueries;
+		GIgnoreAllOcclusionQueries = FALSE;
 	}
 
 	if( ParseParam( appCmdLine(), TEXT("noailogging")) )
