@@ -54,6 +54,9 @@ FDynamicRHI* D3D9CreateRHI()
 void appBeginDrawEvent(const FColor& Color, const TCHAR* Text) {}
 void appEndDrawEvent(void) {}
 void appSetCounterValue(const TCHAR* CounterName, FLOAT Value) {}
+#endif // !DISHONORED_HAVE_D3D9DRV
+
+#if !DISHONORED_HAVE_D3D9DRV || defined(__APPLE__)
 // ShaderCompiler.cpp: D3D9ShaderCompiler.cpp compiles shaders through D3DX; cooked builds load
 // them from the shader cache instead, so failing every compile request is safe here.
 UBOOL D3D9BeginCompileShader(INT JobId, UINT ThreadId, const TCHAR* SourceFilename, const TCHAR* FunctionName, FShaderTarget Target, const FShaderCompilerEnvironment& Environment, FShaderCompilerOutput& Output, UBOOL bDebugDump, const TCHAR* ShaderSubDir)
@@ -64,6 +67,9 @@ UBOOL D3D9FinishCompilingShaderThroughWorker(FShaderTarget Target, INT& CurrentP
 {
 	return FALSE;
 }
+#endif
+
+#if !DISHONORED_HAVE_D3D9DRV
 // UnVcWin32.cpp appGetCompatibilityLevel / appSetCompatibilityLevel forward to CompatibilityEvaluator.cpp
 FCompatibilityLevelInfo GetCompatibilityLevelWindows()
 {
@@ -99,6 +105,7 @@ UBOOL D3D11FinishCompilingShaderThroughWorker(FShaderTarget Target, INT& Current
 
 // ---- OpenGLDrv (not imported: no opengldrv in the retail exe, module_map.md) -----------------
 // DynamicRHI.cpp RHIInit (-opengl / bAllowOpenGL), ShaderCompiler.cpp and Material.cpp reference them.
+extern FDynamicRHI* NullCreateRHI();
 FDynamicRHI* OpenGLCreateRHI()
 {
 	return NullCreateRHI();
@@ -153,6 +160,29 @@ void AutoInitializeRegistrantsMacDrv( INT& Lookup ) {}
 UBOOL DishonoredInputGrabDisabled()
 {
 	return FALSE;
+}
+
+// macOS platform shims
+UBOOL GParanoidDeviceLostChecking = TRUE;
+
+#include <dlfcn.h>
+void* appGetDllHandle( const TCHAR* Filename )
+{
+	if (!Filename) return NULL;
+	return dlopen(TCHAR_TO_ANSI(Filename), RTLD_LAZY | RTLD_LOCAL);
+}
+
+void appFreeDllHandle( void* DllHandle )
+{
+	if (DllHandle) {
+		dlclose(DllHandle);
+	}
+}
+
+void* appGetDllExport( void* DllHandle, const TCHAR* ProcName )
+{
+	if (!ProcName) return NULL;
+	return dlsym(DllHandle, TCHAR_TO_ANSI(ProcName));
 }
 
 // ---- Link anchors for static-library objects nothing references -----------------------------

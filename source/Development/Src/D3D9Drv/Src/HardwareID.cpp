@@ -4,7 +4,7 @@
 
 #include "D3D9DrvPrivate.h"
 
-#if !_WIN64	//@todo win64
+#if !_WIN64 && !PLATFORM_MACOSX && !defined(__APPLE__)	//@todo win64
 
 #include "MinWindows.h"
 #include "Powrprof.h"

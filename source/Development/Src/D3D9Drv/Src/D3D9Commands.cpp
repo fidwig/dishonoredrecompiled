@@ -8,11 +8,13 @@
 #include "EngineParticleClasses.h"
 #include "ChartCreation.h"
 
+#if !PLATFORM_MACOSX && !defined(__APPLE__)
 // DISHONORED(build): xnamath.h ships with the February 2010+ DirectX SDKs; the reference SDK mirror is the August 2008
 // SDK (D3DX_SDK_VERSION 39). DirectXMath (Windows 10 SDK) is XNA Math's successor with the same XMFLOAT4A /
 // XMLoadFloat4A / XMVectorGet*Ptr API in namespace DirectX; SetVertexShaderFloatArray below compiles unchanged.
 #include <DirectXMath.h>
 using namespace DirectX;
+#endif
 // Globals
 
 /**
@@ -442,6 +444,35 @@ void FD3D9DynamicRHI::SetVertexShaderFloatArray(FVertexShaderRHIParamRef VertexS
 
 	// Temp storage space for the vector4 padded data. (Note: We might want to make this dynamic, but using
 	// the stack is cheap and convenient.)
+#if PLATFORM_MACOSX || defined(__APPLE__)
+	struct FFloat4A {
+		FLOAT x, y, z, w;
+	};
+	const UINT GroupSize = 64;
+	alignas(16) FFloat4A pPaddedVectorValues[GroupSize];
+
+	while( NumValues )
+	{
+		UINT NumValuesThisGroup = Min( NumValues, GroupSize );
+		for( UINT i = 0; i < NumValuesThisGroup; ++i )
+		{
+			pPaddedVectorValues[i].x = FloatValues[i];
+			pPaddedVectorValues[i].y = 0.0f;
+			pPaddedVectorValues[i].z = 0.0f;
+			pPaddedVectorValues[i].w = 0.0f;
+		}
+
+		Direct3DDevice->SetVertexShaderConstantF(
+			BaseIndex / NumBytesPerShaderRegister,
+			(FLOAT*)pPaddedVectorValues,
+			(NumValuesThisGroup * sizeof(FLOAT) * 4 + NumBytesPerShaderRegister - 1) / NumBytesPerShaderRegister
+		);
+
+		NumValues   -= NumValuesThisGroup;
+		FloatValues += NumValuesThisGroup;
+		BaseIndex   += NumValuesThisGroup * NumBytesPerShaderRegister;
+	}
+#else
 	const UINT GroupSize = 64;
 	XMFLOAT4A pPaddedVectorValues[GroupSize];
 
@@ -498,6 +529,7 @@ void FD3D9DynamicRHI::SetVertexShaderFloatArray(FVertexShaderRHIParamRef VertexS
 		FloatValues	+= NumValuesThisGroup;
 		BaseIndex	+= NumValuesThisGroup*NumBytesPerShaderRegister;
 	}
+#endif
 }
 
 void FD3D9DynamicRHI::SetVertexShaderBoolParameter(FVertexShaderRHIParamRef VertexShader,UINT /*BufferIndex*/,UINT BaseIndex,UBOOL NewValue)

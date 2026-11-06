@@ -4,8 +4,6 @@ Copyright 1998-2013 Epic Games, Inc. All Rights Reserved.
 =============================================================================*/
 
 #include "D3D9DrvPrivate.h"
-#include "HardwareID.h"
-#include "VideoDevice.h"
 
 #include <algorithm>
 #include <functional>

@@ -5,6 +5,8 @@ This code taken with minimal modifications from PCCompat2007.6.29.4.
 //#include "StdAfx.h"
 #include "D3D9DrvPrivate.h"
 
+#if !PLATFORM_MACOSX && !defined(__APPLE__)
+
 #include "VideoDevice.h"
 #include "dxdiag.h"
 
@@ -429,3 +431,5 @@ bool VideoDevice::GetATICrossfire()
 {
     return m_fATICrossfire;
 }
+
+#endif

@@ -4,9 +4,9 @@
 =============================================================================*/
 
 #include "D3D9DrvPrivate.h"
-#include "..\Src\SceneRenderTargets.h"
+#include "../Src/SceneRenderTargets.h"
 #if WITH_APEX
-#include "..\Src\NvApexRender.h"
+#include "../Src/NvApexRender.h"
 #endif
 
 //
@@ -655,7 +655,7 @@ void FD3D9DynamicRHI::UpdateD3DDeviceFromViewports()
 				}
 
 				// when running debug D3D runtime and not -onethread, add D3DCREATE_MULTITHREADED
-#if !SHIPPING_PC_GAME
+#if !SHIPPING_PC_GAME && !PLATFORM_MACOSX && !defined(__APPLE__)
 				{
 					// WRH - 2007/09/18 - Note that there is no supported method of testing for the debug D3D runtime. This works on XP.
 					// Also minimizes false positives. If the regkey location changes, it just won't detect the debug runtime.
@@ -692,7 +692,7 @@ void FD3D9DynamicRHI::UpdateD3DDeviceFromViewports()
 					UINT AdapterNumber = D3DADAPTER_DEFAULT;
 
 					// Don't allow NvPerfHUD profiling in the shippintg builds
-#if !SHIPPING_PC_GAME
+#if !SHIPPING_PC_GAME && !PLATFORM_MACOSX && !defined(__APPLE__)
 					// Automatically detect nvperfhud device
 					for( UINT Adapter=0; Adapter < Direct3D->GetAdapterCount(); Adapter++ )
 					{

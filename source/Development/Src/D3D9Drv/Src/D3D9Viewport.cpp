@@ -5,7 +5,7 @@
 
 #include "D3D9DrvPrivate.h"
 #if WITH_APEX
-#include "..\Src\NvApexRender.h"
+#include "../Src/NvApexRender.h"
 #endif
 
 /**

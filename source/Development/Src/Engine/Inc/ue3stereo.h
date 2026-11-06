@@ -332,10 +332,13 @@ namespace nv {
 		{
 			return false;
 		}
+		struct UE3StereoD3D9 {
+			UE3StereoD3D9(bool = false) {}
+			void UpdateStereoTexture(void*, void*, bool = false) {}
+			void RequiresUpdate(bool = true) {}
+		};
 	};
 };
-
-
 #endif
 
 #endif /* __UE3STEREO__ */

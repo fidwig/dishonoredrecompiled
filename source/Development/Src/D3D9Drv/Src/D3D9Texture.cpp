@@ -705,6 +705,9 @@ void FD3D9DynamicRHI::UnlockTextureCubeFace(FTextureCubeRHIParamRef TextureCubeR
 
 FTexture2DRHIRef FD3D9DynamicRHI::CreateStereoFixTexture()
 {
+#if PLATFORM_MACOSX || defined(__APPLE__)
+	return NULL;
+#else
     using nv::stereo::UE3StereoD3D9;
 
 	// Need to change the EPixelFormat in the FD3D9Texture2D constructor call if this changes.
@@ -726,4 +729,5 @@ FTexture2DRHIRef FD3D9DynamicRHI::CreateStereoFixTexture()
 	}
 
     return Texture2D;
+#endif
 }

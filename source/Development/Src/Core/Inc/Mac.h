@@ -111,18 +111,27 @@ typedef void*		HANDLE;
 typedef void*		HINSTANCE;
 typedef void*		HMODULE;
 typedef void*		HWND;
-typedef long		HRESULT;
+#ifndef _HRESULT_DEFINED
+#define _HRESULT_DEFINED
+typedef int32_t		HRESULT;
+#endif
+#ifndef _WPARAM_DEFINED
+#define _WPARAM_DEFINED
 typedef intptr_t	LRESULT;
 typedef uintptr_t	WPARAM;
 typedef intptr_t	LPARAM;
+#endif
 #define APIENTRY
 
+#ifndef _TAGRECT_DEFINED
+#define _TAGRECT_DEFINED
 typedef struct tagRECT {
 	LONG left;
 	LONG top;
 	LONG right;
 	LONG bottom;
-} RECT;
+} RECT, *PRECT, *LPRECT;
+#endif
 
 inline LRESULT DefWindowProc(HWND, UINT, WPARAM, LPARAM) { return 0; }
 

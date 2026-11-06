@@ -4,7 +4,7 @@ This code taken with minimal modifications from PCCompat2007.6.29.4.
 
 #pragma once
 
-#if !_WIN64	//@todo win64
+#if !_WIN64 && !PLATFORM_MACOSX && !defined(__APPLE__)	//@todo win64
 
 #define NUM_LOGICAL_BITS   0x00FF0000 //EBX[23:16] indicate number of
 // These are the bit flags that get set on calling cpuid
