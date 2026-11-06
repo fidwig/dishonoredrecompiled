@@ -2004,23 +2004,35 @@ FStreamingManagerTexture::FStreamingManagerTexture()
 ,	bReportTextureStats(FALSE)
 ,	bPauseTextureStreaming(FALSE)
 {
-	// Read settings from ini file.
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("MemoryMargin"),				MemoryMargin,						GEngineIni ) );
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("HysteresisLimit"),				MemoryHysteresisLimit,				GEngineIni ) );
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("DropMipLevelsLimit"),			MemoryDropMipLevelsLimit,			GEngineIni ) );
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("StopIncreasingLimit"),			MemoryStopIncreasingLimit,			GEngineIni ) );
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("StopStreamingLimit"),			MemoryStopStreamingLimit,			GEngineIni ) );
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("MinRequestedMipsToConsider"),	MinRequestedMipsToConsider,			GEngineIni ) );
-	verify( GConfig->GetInt( TEXT("TextureStreaming"), TEXT("MinEvictSize"),				MinEvictSize,						GEngineIni ) );
+	// Read settings from ini file (with standard UE3 defaults if missing from ini).
+	MemoryMargin = 20;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("MemoryMargin"),				MemoryMargin,						GEngineIni );
+	MemoryHysteresisLimit = 20;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("HysteresisLimit"),				MemoryHysteresisLimit,				GEngineIni );
+	MemoryDropMipLevelsLimit = 16;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("DropMipLevelsLimit"),			MemoryDropMipLevelsLimit,			GEngineIni );
+	MemoryStopIncreasingLimit = 12;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("StopIncreasingLimit"),			MemoryStopIncreasingLimit,			GEngineIni );
+	MemoryStopStreamingLimit = 8;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("StopStreamingLimit"),			MemoryStopStreamingLimit,			GEngineIni );
+	MinRequestedMipsToConsider = 11;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("MinRequestedMipsToConsider"),	MinRequestedMipsToConsider,			GEngineIni );
+	MinEvictSize = 10;
+	GConfig->GetInt( TEXT("TextureStreaming"), TEXT("MinEvictSize"),				MinEvictSize,						GEngineIni );
 
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("MinTimeToGuaranteeMinMipCount"),		MinTimeToGuaranteeMinMipCount,	GEngineIni ) );
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("MaxTimeToGuaranteeMinMipCount"),		MaxTimeToGuaranteeMinMipCount,	GEngineIni ) );
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("LightmapStreamingFactor"),			GLightmapStreamingFactor,		GEngineIni ) );
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("ShadowmapStreamingFactor"),			GShadowmapStreamingFactor,		GEngineIni ) );
+	MinTimeToGuaranteeMinMipCount = 2.0f;
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("MinTimeToGuaranteeMinMipCount"),		MinTimeToGuaranteeMinMipCount,	GEngineIni );
+	MaxTimeToGuaranteeMinMipCount = 0.0f;
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("MaxTimeToGuaranteeMinMipCount"),		MaxTimeToGuaranteeMinMipCount,	GEngineIni );
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("LightmapStreamingFactor"),			GLightmapStreamingFactor,		GEngineIni );
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("ShadowmapStreamingFactor"),			GShadowmapStreamingFactor,		GEngineIni );
 
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("MinFudgeFactor"),					MinFudgeFactor, GEngineIni ) );
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("FudgeFactorIncreaseRateOfChange"),	FudgeFactorIncreaseRateOfChange, GEngineIni ) );
-	verify( GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("FudgeFactorDecreaseRateOfChange"),	FudgeFactorDecreaseRateOfChange, GEngineIni ) );
+	MinFudgeFactor = 1.0f;
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("MinFudgeFactor"),					MinFudgeFactor, GEngineIni );
+	FudgeFactorIncreaseRateOfChange = 1.0f;
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("FudgeFactorIncreaseRateOfChange"),	FudgeFactorIncreaseRateOfChange, GEngineIni );
+	FudgeFactorDecreaseRateOfChange = 1.0f;
+	GConfig->GetFloat( TEXT("TextureStreaming"), TEXT("FudgeFactorDecreaseRateOfChange"),	FudgeFactorDecreaseRateOfChange, GEngineIni );
 	GConfig->GetInt(TEXT("TextureStreaming"), TEXT("PoolSize"), OriginalTexturePoolSize, GEngineIni);
 	GConfig->GetBool(TEXT("TextureStreaming"), TEXT("UsePriorityStreaming"), bUsePriorityStreaming, GEngineIni);
 	GConfig->GetBool(TEXT("TextureStreaming"), TEXT("bAllowSwitchingStreamingSystem"), bAllowSwitchingStreamingSystem, GEngineIni);
