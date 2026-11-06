@@ -23,7 +23,23 @@ void FGFxAllocator::GetInfo(GSysAllocPaged::Info* Info) const
 
 void* FGFxAllocator::Alloc(unsigned int Size, unsigned int Align)
 {
+#if defined(_MSC_VER) || defined(_WIN32)
     void* p = Align > 16 ? _aligned_malloc(Size, Align) : malloc(Size);
+#else
+    void* p = nullptr;
+    if (Align > 16)
+    {
+        size_t alignment = Align < sizeof(void*) ? sizeof(void*) : Align;
+        if (posix_memalign(&p, alignment, Size) != 0)
+        {
+            p = nullptr;
+        }
+    }
+    else
+    {
+        p = malloc(Size);
+    }
+#endif
     if (p)
     {
         m_TotalAlloc += Size;
@@ -35,8 +51,13 @@ void* FGFxAllocator::Alloc(unsigned int Size, unsigned int Align)
 bool FGFxAllocator::Free(void* Ptr, unsigned int Size, unsigned int Align)
 {
     if (Ptr == 0) return true;
+#if defined(_MSC_VER) || defined(_WIN32)
     if (Align > 16) _aligned_free(Ptr);
     else free(Ptr);
+#else
+    (void)Align;
+    free(Ptr);
+#endif
     m_TotalAlloc = Size <= m_TotalAlloc ? m_TotalAlloc - Size : 0;
     return true;
 }
