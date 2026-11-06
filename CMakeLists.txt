@@ -59,6 +59,10 @@ if(DISHONORED_ENABLE_ENGINE)
   # UnLightMap.cpp, UnShadowMap.cpp): the retail exe imports no nvtt.dll. Dishonored::nvtt stays declared in
   # cmake/ReferenceExternals.cmake for a future editor build.
   target_link_libraries(Engine PUBLIC Dishonored::nvapi)
+  if(APPLE)
+    target_link_libraries(Engine PUBLIC "-framework Cocoa" "-framework QuartzCore")
+    set_source_files_properties(source/Development/Src/Engine/Src/UnMacClient.cpp PROPERTIES COMPILE_OPTIONS "-x;objective-c++")
+  endif()
 endif()
 
 # Milestone 1 modules (agent N): the real Launch needs their registrants and the Core hooks they

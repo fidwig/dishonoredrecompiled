@@ -7,7 +7,29 @@
 
 #if PLATFORM_MACOSX
 
+#define __NUMBERFORMATTING__ 1
+#import <Cocoa/Cocoa.h>
+#import <QuartzCore/CAMetalLayer.h>
+
 #include "UnMacClient.h"
+
+static void appMacPumpCocoaEvents()
+{
+	@autoreleasepool {
+		if (NSApp != nil)
+		{
+			NSEvent* Event = nil;
+			while ((Event = [NSApp nextEventMatchingMask:NSEventMaskAny
+			                                   untilDate:[NSDate distantPast]
+			                                      inMode:NSDefaultRunLoopMode
+			                                     dequeue:YES]))
+			{
+				[NSApp sendEvent:Event];
+			}
+			[NSApp updateWindows];
+		}
+	}
+}
 
 /*-----------------------------------------------------------------------------
 	FMacViewport
@@ -17,6 +39,7 @@ FMacViewport::FMacViewport(UMacClient* InClient, FViewportClient* InViewportClie
 	: FViewport(InViewportClient)
 	, Client(InClient)
 	, Name(InName)
+	, WindowHandle(NULL)
 {
 	Resize(InSizeX, InSizeY, InFullscreen);
 }
@@ -33,10 +56,65 @@ void FMacViewport::Destroy()
 		ViewportClient = NULL;
 		UpdateViewportRHI(TRUE, 0, 0, FALSE);
 	}
+	if( WindowHandle )
+	{
+		@autoreleasepool {
+			NSWindow* Window = (NSWindow*)CFBridgingRelease(WindowHandle);
+			[Window close];
+			WindowHandle = NULL;
+		}
+	}
 }
 
 void FMacViewport::Resize(UINT NewSizeX, UINT NewSizeY, UBOOL NewFullscreen, INT InPosX, INT InPosY)
 {
+	if( !WindowHandle )
+	{
+		@autoreleasepool {
+			[NSApplication sharedApplication];
+			[NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+
+			CGFloat Width = (CGFloat)NewSizeX;
+			CGFloat Height = (CGFloat)NewSizeY;
+			CGFloat X = InPosX >= 0 ? (CGFloat)InPosX : 100.0;
+			CGFloat Y = InPosY >= 0 ? (CGFloat)InPosY : 100.0;
+
+			NSRect FrameRect = NSMakeRect(X, Y, Width, Height);
+			NSWindowStyleMask StyleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+
+			NSWindow* Window = [[NSWindow alloc] initWithContentRect:FrameRect
+			                                               styleMask:StyleMask
+			                                                 backing:NSBackingStoreBuffered
+			                                                   defer:NO];
+			[Window setTitle:@"Dishonored"];
+			[Window setAcceptsMouseMovedEvents:YES];
+
+			if( InPosX < 0 && InPosY < 0 )
+			{
+				[Window center];
+			}
+
+			NSView* ContentView = [Window contentView];
+			[ContentView setWantsLayer:YES];
+
+			[Window makeKeyAndOrderFront:nil];
+			[NSApp activateIgnoringOtherApps:YES];
+
+			WindowHandle = (void*)CFBridgingRetain(Window);
+			debugf(NAME_Init, TEXT("Created native Cocoa NSWindow: %p for viewport %ux%u"), WindowHandle, NewSizeX, NewSizeY);
+		}
+	}
+	else
+	{
+		@autoreleasepool {
+			NSWindow* Window = (__bridge NSWindow*)WindowHandle;
+			NSRect Frame = [Window frame];
+			Frame.size.width = (CGFloat)NewSizeX;
+			Frame.size.height = (CGFloat)NewSizeY;
+			[Window setFrame:Frame display:YES animate:NO];
+		}
+	}
+
 	UpdateViewportRHI(FALSE, NewSizeX, NewSizeY, NewFullscreen);
 }
 
@@ -67,8 +145,7 @@ void UMacClient::Init(UEngine* InEngine)
 
 void UMacClient::Tick(FLOAT DeltaTime)
 {
-	extern void appMacPumpMessages();
-	appMacPumpMessages();
+	appMacPumpCocoaEvents();
 }
 
 UBOOL UMacClient::Exec(const TCHAR* Cmd, FOutputDevice& Ar)

@@ -19,6 +19,7 @@ class FMacViewport : public FViewportFrame, public FViewport
 public:
 	UMacClient* Client;
 	FString Name;
+	void* WindowHandle;
 
 	FMacViewport(UMacClient* InClient, FViewportClient* InViewportClient, const TCHAR* InName, UINT InSizeX, UINT InSizeY, UBOOL InFullscreen);
 	virtual ~FMacViewport();
@@ -30,7 +31,7 @@ public:
 	virtual void Resize(UINT NewSizeX, UINT NewSizeY, UBOOL NewFullscreen, INT InPosX = -1, INT InPosY = -1);
 
 	// FViewport interface
-	virtual void* GetWindow() { return NULL; }
+	virtual void* GetWindow() { return WindowHandle; }
 	virtual FViewportFrame* GetViewportFrame() { return this; }
 	virtual UBOOL CaptureJoystickInput(UBOOL Capture) { return TRUE; }
 	virtual UBOOL KeyState(FName Key) const { return FALSE; }
